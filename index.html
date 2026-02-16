@@ -1,0 +1,3750 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Event System — v4</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    :root {
+      --bg-window: #F1F5F9;
+      --bg-card: #FFFFFF;
+      --bg-header: #2F3846;
+      --bg-header-light: #3a4555;
+      --accent-blue: #2B69E6;
+      --accent-blue-light: rgba(43, 105, 230, 0.1);
+      --accent-blue-mid: rgba(43, 105, 230, 0.2);
+      --accent-red: #F1365D;
+      --accent-green: #10B981;
+      --accent-green-light: rgba(16, 185, 129, 0.1);
+      --accent-gold: #F59E0B;
+      --accent-gold-light: rgba(245, 158, 11, 0.1);
+      --accent-purple: #8B5CF6;
+      --accent-purple-light: rgba(139, 92, 246, 0.1);
+      --accent-orange: #F97316;
+      --accent-orange-light: rgba(249, 115, 22, 0.1);
+      --text-primary: #1E293B;
+      --text-secondary: #94A3B8;
+      --text-dark-primary: #FFFFFF;
+      --text-dark-secondary: #94A3B8;
+      --border: #E2E8F0;
+      --border-dark: rgba(255, 255, 255, 0.1);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.2);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #1a1f2e;
+      color: var(--text-primary);
+      overflow-x: auto;
+      overflow-y: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      user-select: none;
+      padding-left: 60px;
+    }
+
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      position: relative;
+      overflow: hidden;
+      background: #1a2030;
+      border-radius: 20px;
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
+    }
+
+    /* Force vertical/portrait view always */
+    @media (min-aspect-ratio: 1/1),
+    (orientation: landscape) {
+      body {
+        align-items: flex-start;
+        overflow-y: auto;
+        padding: 20px 0;
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .phone-frame {
+        transform: none;
+        margin: 0 auto;
+      }
+    }
+
+    /* Floating toast for inactive events */
+    .event-toast {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg-header);
+      color: white;
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      z-index: 9000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      text-align: center;
+      max-width: 320px;
+      white-space: nowrap;
+    }
+
+    .event-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+
+    .event-toast .toast-label {
+      font-size: 10px;
+      font-weight: 900;
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .event-toast .toast-time {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--accent-green);
+    }
+
+    /* ============================================ DEBUG ============================================ */
+    .debug-tab {
+      position: fixed;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 100px;
+      background: #ef4444;
+      border-radius: 0 8px 8px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 9998;
+      writing-mode: vertical-rl;
+      font-size: 10px;
+      font-weight: 900;
+      color: white;
+      letter-spacing: 3px;
+      box-shadow: 4px 0 16px rgba(239, 68, 68, 0.4);
+    }
+
+    .debug-tab:hover {
+      background: #dc2626;
+    }
+
+    .debug-panel {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 280px;
+      height: 100vh;
+      background: #1e1e2e;
+      z-index: 9999;
+      padding: 20px 16px;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+      border-right: 2px solid #ef4444;
+      transform: translateX(-100%);
+    }
+
+    .debug-panel.open {
+      transform: translateX(0);
+    }
+
+    .debug-panel::-webkit-scrollbar {
+      display: none;
+    }
+
+    .debug-title {
+      font-size: 11px;
+      font-weight: 900;
+      color: #ef4444;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .debug-section {
+      margin-bottom: 16px;
+    }
+
+    .debug-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: #94A3B8;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .debug-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .debug-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .debug-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #ef4444;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .debug-val {
+      font-size: 10px;
+      font-weight: 800;
+      color: white;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .debug-btn {
+      width: 100%;
+      padding: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+
+    .debug-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .debug-btn.active {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+
+    .debug-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #94A3B8;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .debug-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Timeline scrubber */
+    .debug-timeline {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    .debug-day-btn {
+      flex: 1;
+      padding: 6px 0;
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.5);
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .debug-day-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .debug-day-btn.active {
+      background: #ef4444;
+      border-color: #ef4444;
+      color: white;
+    }
+
+    .debug-time-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #ef4444;
+      text-align: center;
+      padding: 4px 8px;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    /* ============================================ GAME BG ============================================ */
+    .game-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, #1a2030, #151b28);
+      z-index: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .game-bg::after {
+      content: 'GAME WORLD';
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 8px;
+      color: rgba(255, 255, 255, 0.04);
+      text-transform: uppercase;
+    }
+
+    /* ============================================ HUD ICON ============================================ */
+    .hud-icon {
+      position: absolute;
+      bottom: 140px;
+      left: 16px;
+      z-index: 100;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+
+    .hud-icon:active {
+      transform: scale(0.93);
+    }
+
+    .hud-ring-container {
+      width: 64px;
+      height: 64px;
+      position: relative;
+      background: var(--bg-header);
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hud-ring-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .hud-ring-svg circle {
+      fill: none;
+      stroke-linecap: round;
+    }
+
+    .ring-bg {
+      stroke: rgba(255, 255, 255, 0.08);
+    }
+
+    .hud-center-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 20px;
+    }
+
+    .hud-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 22px;
+      height: 22px;
+      background: var(--accent-red);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+      color: white;
+      border: 2px solid var(--bg-header);
+      box-shadow: 0 2px 8px rgba(241, 54, 93, 0.4);
+      z-index: 20;
+      /* Ensure on top */
+    }
+
+    .hud-timer {
+      text-align: center;
+      margin-top: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #FFF;
+      letter-spacing: 0.5px;
+    }
+
+    .hud-label {
+      text-align: center;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .hud-new-tag {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent-green);
+      color: #000;
+      font-size: 8px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+      display: none;
+      z-index: 20;
+      /* Ensure on top */
+    }
+
+    /* ============================================ EVENT MENU ============================================ */
+    .event-menu {
+      position: absolute;
+      inset: 0;
+      z-index: 200;
+      background: var(--bg-window);
+      display: none;
+      flex-direction: column;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .event-menu.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 52px 20px 14px;
+      background: var(--bg-header);
+    }
+
+    .menu-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--text-dark-primary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .close-btn {
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      color: white;
+      cursor: pointer;
+      background: var(--accent-red);
+      border-radius: var(--radius-sm);
+    }
+
+    .close-btn:active {
+      opacity: 0.8;
+    }
+
+    .img-placeholder {
+      width: 100%;
+      background: linear-gradient(135deg, #2a3444, #1e2836);
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .img-placeholder-text {
+      font-size: 11px;
+      font-weight: 900;
+      color: rgba(255, 255, 255, 0.25);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .img-placeholder-sub {
+      font-size: 8px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.12);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .menu-img-placeholder {
+      height: 60px;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+    }
+
+    .card-img-placeholder {
+      height: 36px;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #e8ecf1, #dfe4ea);
+    }
+
+    .card-img-placeholder .img-placeholder-text {
+      color: rgba(0, 0, 0, 0.12);
+    }
+
+    .card-img-placeholder .img-placeholder-sub {
+      color: rgba(0, 0, 0, 0.08);
+    }
+
+    .mini-calendar {
+      background: var(--bg-header);
+      padding: 0 20px 12px;
+    }
+
+    .cal-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 8px 0;
+    }
+
+    .cal-toggle-text {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dark-secondary);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .cal-toggle-arrow {
+      font-size: 8px;
+      color: var(--text-dark-secondary);
+      transition: transform 0.3s;
+    }
+
+    .cal-toggle.expanded .cal-toggle-arrow {
+      transform: rotate(180deg);
+    }
+
+    .cal-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+    }
+
+    .cal-body.expanded {
+      max-height: 200px;
+    }
+
+    .cal-days {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0 4px;
+    }
+
+    .cal-day {
+      font-size: 9px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.3);
+      width: calc(100%/7);
+      text-align: center;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .cal-day.today {
+      color: var(--accent-blue);
+    }
+
+    .cal-gantt {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 4px 0 6px;
+    }
+
+    .gantt-row {
+      display: flex;
+      align-items: center;
+      height: 20px;
+    }
+
+    .gantt-label {
+      width: 56px;
+      font-size: 8px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.5);
+      flex-shrink: 0;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .gantt-track {
+      flex: 1;
+      height: 100%;
+      position: relative;
+    }
+
+    .gantt-bar {
+      position: absolute;
+      height: 16px;
+      top: 2px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7px;
+      font-weight: 800;
+      color: white;
+      letter-spacing: 0.3px;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 0 6px;
+    }
+
+    .gantt-now-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--accent-red);
+      z-index: 2;
+      opacity: 0.8;
+    }
+
+    .event-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px 30px;
+    }
+
+    .event-list::-webkit-scrollbar {
+      display: none;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 900;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin: 14px 0 10px;
+    }
+
+    .section-label:first-child {
+      margin-top: 0;
+    }
+
+    .event-card {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.12s, opacity 0.3s;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .event-card:active {
+      transform: scale(0.985);
+    }
+
+    .event-card.token-card {
+      border-left: 4px solid var(--accent-blue);
+    }
+
+    .event-card.buff-card {
+      border-left: 4px solid var(--accent-orange);
+    }
+
+    .event-card.clan-card {
+      border-left: 4px solid var(--accent-purple);
+    }
+
+    .event-card.weekend-card {
+      border-left: 4px solid var(--accent-green);
+    }
+
+    .event-card.weekend-buff-card {
+      border-left: 4px solid var(--accent-gold);
+    }
+
+    .event-card.has-claim {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 1px var(--accent-blue), var(--shadow-md);
+    }
+
+    .event-card.ended-card {
+      opacity: 0.4;
+      border-left-color: #94A3B8;
+    }
+
+    .event-card.upcoming-card {
+      opacity: 0.6;
+    }
+
+    .event-card.hidden-card {
+      display: none;
+    }
+
+    .card-main {
+      padding: 14px 16px;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .card-name {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .card-timer {
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      padding: 3px 10px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+
+    .timer-ending {
+      color: var(--accent-red);
+      background: rgba(241, 54, 93, 0.08);
+    }
+
+    .timer-starting {
+      color: var(--accent-green);
+      background: var(--accent-green-light);
+    }
+
+    .timer-active {
+      color: var(--accent-blue);
+      background: var(--accent-blue-light);
+    }
+
+    .timer-ended {
+      color: var(--text-secondary);
+      background: rgba(148, 163, 184, 0.1);
+    }
+
+    .card-pills {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .pill {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .pill-token {
+      background: var(--accent-blue-light);
+      color: var(--accent-blue);
+    }
+
+    .pill-buff {
+      background: var(--accent-orange-light);
+      color: var(--accent-orange);
+    }
+
+    .pill-clan {
+      background: var(--accent-purple-light);
+      color: var(--accent-purple);
+    }
+
+    .pill-weekend {
+      background: var(--accent-green-light);
+      color: var(--accent-green);
+    }
+
+    .pill-weekend-buff {
+      background: var(--accent-gold-light);
+      color: var(--accent-gold);
+    }
+
+    .pill-ended {
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text-secondary);
+    }
+
+    .card-desc {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .card-progress {
+      margin-top: 10px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .progress-label .token-name {
+      color: var(--accent-blue);
+      font-weight: 800;
+    }
+
+    .progress-label .token-count {
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+
+    .progress-bar-bg {
+      height: 8px;
+      background: #E2E8F0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s;
+    }
+
+    .fill-blue {
+      background: var(--accent-blue);
+    }
+
+    .fill-green {
+      background: var(--accent-green);
+    }
+
+    .card-milestone-mini {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+    }
+
+    .mini-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid #CBD5E1;
+    }
+
+    .mini-dot.claimed {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+    }
+
+    .mini-dot.claimable {
+      background: var(--accent-green);
+      border-color: var(--accent-green);
+      animation: dotPulse 1.5s infinite;
+    }
+
+    @keyframes dotPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.3);
+      }
+    }
+
+    .mini-dot.locked {
+      opacity: 0.3;
+    }
+
+    .milestone-status {
+      font-size: 10px;
+      color: var(--accent-green);
+      font-weight: 800;
+      margin-left: 4px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .card-claim-banner {
+      background: var(--accent-blue-light);
+      padding: 8px 16px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--accent-blue);
+      border-top: 1px solid var(--accent-blue-mid);
+    }
+
+    .card-claim-banner.show {
+      display: flex;
+    }
+
+    .buff-expand {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s;
+    }
+
+    .buff-expand.open {
+      max-height: 220px;
+    }
+
+    .buff-expand-inner {
+      padding: 0 16px 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .buff-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+    }
+
+    .buff-detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .buff-detail-label {
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 10px;
+    }
+
+    .buff-detail-value {
+      color: var(--text-primary);
+      font-weight: 800;
+    }
+
+    .buff-synergy {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: var(--accent-blue-light);
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--accent-blue);
+    }
+
+    .buff-synergy-text {
+      font-size: 10px;
+      color: var(--accent-blue);
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .buff-chevron {
+      font-size: 10px;
+      color: var(--text-secondary);
+      transition: transform 0.3s;
+      margin-left: auto;
+      padding-left: 8px;
+    }
+
+    .buff-card.expanded .buff-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* ============================================ EVENT DETAIL ============================================ */
+    .event-detail {
+      position: absolute;
+      inset: 0;
+      z-index: 300;
+      background: var(--bg-window);
+      display: none;
+      flex-direction: column;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .event-detail.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .detail-header {
+      padding: 0;
+      background: var(--bg-header);
+      position: relative;
+    }
+
+    .detail-close-btn {
+      position: absolute;
+      top: 48px;
+      right: 16px;
+      z-index: 10;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      color: white;
+      cursor: pointer;
+      background: var(--accent-red);
+      border-radius: var(--radius-sm);
+    }
+
+    .detail-close-btn:active {
+      opacity: 0.8;
+    }
+
+    .detail-img-placeholder {
+      height: 80px;
+      margin-top: 44px;
+      border: none;
+      border-bottom: 1px solid var(--border-dark);
+    }
+
+    .detail-header-content {
+      padding: 14px 20px 18px;
+    }
+
+    .detail-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--text-dark-primary);
+      margin-bottom: 6px;
+      padding-right: 40px;
+    }
+
+    .detail-subtitle {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dark-secondary);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .detail-stats {
+      display: flex;
+      background: var(--bg-header-light);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .detail-stat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 10px 8px;
+    }
+
+    .detail-stat+.detail-stat {
+      border-left: 1px solid var(--border-dark);
+    }
+
+    .stat-label {
+      font-size: 8px;
+      font-weight: 800;
+      color: var(--text-dark-secondary);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 900;
+      color: white;
+    }
+
+    .detail-body {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 30px;
+    }
+
+    .detail-body::-webkit-scrollbar {
+      display: none;
+    }
+
+    .milestone-section {
+      padding: 18px 0;
+    }
+
+    .milestone-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      margin-bottom: 14px;
+    }
+
+    .milestone-title {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--accent-blue);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .claim-all-btn {
+      font-family: 'Inter';
+      font-size: 11px;
+      font-weight: 900;
+      color: white;
+      background: var(--accent-blue);
+      border: none;
+      padding: 7px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .claim-all-btn:active {
+      opacity: 0.85;
+    }
+
+    .claim-all-btn.disabled {
+      background: #CBD5E1;
+      color: #94A3B8;
+      pointer-events: none;
+    }
+
+    .milestone-row-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--text-secondary);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      padding-left: 22px;
+    }
+
+    .milestone-track-container {
+      padding: 0 16px;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+    }
+
+    .milestone-track-inner {
+      position: relative;
+      padding: 0 4px;
+      width: 560px;
+      transition: transform 0.5s ease;
+    }
+
+    .milestone-connector {
+      position: absolute;
+      top: 30px;
+      left: 36px;
+      right: 36px;
+      height: 4px;
+      background: #E2E8F0;
+      border-radius: 2px;
+      z-index: 0;
+    }
+
+    .milestone-connector-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.6s;
+    }
+
+    .fill-connector-blue {
+      background: var(--accent-blue);
+    }
+
+    .fill-connector-green {
+      background: var(--accent-green);
+    }
+
+    .milestone-track {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+    }
+
+    .milestone-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 68px;
+      cursor: pointer;
+    }
+
+    .milestone-node:active {
+      transform: scale(0.95);
+    }
+
+    .ms-threshold {
+      font-size: 11px;
+      font-weight: 900;
+      color: #CBD5E1;
+      margin-bottom: 6px;
+    }
+
+    .ms-threshold.reached {
+      color: var(--accent-blue);
+    }
+
+    .ms-icon-wrap {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      position: relative;
+      border: 2px solid #E2E8F0;
+      background: var(--bg-card);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .ms-icon-wrap.claimed {
+      border-color: var(--accent-blue);
+      background: var(--accent-blue-light);
+    }
+
+    .ms-icon-wrap.claimed::after {
+      content: '✓';
+      position: absolute;
+      top: -7px;
+      right: -7px;
+      width: 20px;
+      height: 20px;
+      background: var(--accent-blue);
+      color: white;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--bg-window);
+    }
+
+    .ms-icon-wrap.claimable {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+      animation: claimGlow 2s infinite;
+    }
+
+    @keyframes claimGlow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+      }
+
+      50% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.25);
+      }
+    }
+
+    .ms-icon-wrap.locked {
+      opacity: 0.35;
+    }
+
+    .ms-reward-name {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      text-align: center;
+      max-width: 72px;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .milestone-break {
+      display: flex;
+      align-items: center;
+      padding: 14px 20px;
+      gap: 12px;
+    }
+
+    .break-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .break-label {
+      font-size: 9px;
+      font-weight: 900;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ============================================ CHAMPION SECTION ============================================ */
+    .champ-section {
+      position: relative;
+      margin: 6px 16px 10px;
+      padding: 16px 4px 12px;
+      background: linear-gradient(160deg, #FFFBF0, #FFF8E7, #FFFDF5);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      box-shadow: 0 2px 12px rgba(245, 158, 11, 0.08), inset 0 0 20px rgba(245, 158, 11, 0.03);
+      overflow: hidden;
+    }
+
+    /* Animated gold border glow — slow pulse */
+    .champ-section::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent-gold), rgba(251, 191, 36, 0.3) 30%, transparent 50%, rgba(251, 191, 36, 0.3) 70%, var(--accent-gold));
+      z-index: -1;
+      opacity: 0;
+      animation: borderGlow 7s ease-in-out infinite;
+    }
+
+    @keyframes borderGlow {
+
+      0%,
+      100% {
+        opacity: 0.15;
+      }
+
+      50% {
+        opacity: 0.55;
+      }
+    }
+
+    /* Shimmer sweep */
+    .champ-bg-shimmer {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg,
+          transparent 25%,
+          rgba(251, 191, 36, 0.06) 40%,
+          rgba(245, 158, 11, 0.1) 50%,
+          rgba(251, 191, 36, 0.06) 60%,
+          transparent 75%);
+      background-size: 300% 100%;
+      animation: champShimmer 5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes champShimmer {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .champ-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .champ-header-text {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--accent-gold);
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+    }
+
+    /* Gold connector instead of blue to differentiate */
+    .champ-connector {
+      background: #E2E8F0 !important;
+    }
+
+    .fill-connector-champ {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--accent-gold), #FBBF24);
+      transition: width 0.6s;
+    }
+
+    .champ-node {
+      min-width: 90px;
+    }
+
+    /* Threshold labels use gold when reached instead of blue */
+    .champ-threshold {
+      color: #CBD5E1 !important;
+    }
+
+    .champ-threshold.reached {
+      color: var(--accent-gold) !important;
+    }
+
+    /* Icons: larger than core */
+    .champ-node .ms-icon-wrap {
+      width: 68px;
+      height: 68px;
+      font-size: 28px;
+      background: var(--bg-card);
+      border: 2px solid #E2E8F0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Claimable: use green glow like core rewards */
+    .champ-node .ms-icon-wrap.claimable {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+      animation: claimGlow 2s infinite;
+    }
+
+    /* Claimed: use blue like core rewards */
+    .champ-node .ms-icon-wrap.claimed {
+      border-color: var(--accent-blue);
+      background: var(--accent-blue-light);
+    }
+
+    /* Same checkmark badge as core */
+    .champ-node .ms-icon-wrap.claimed::after {
+      content: '✓';
+      position: absolute;
+      top: -7px;
+      right: -7px;
+      width: 20px;
+      height: 20px;
+      background: var(--accent-blue);
+      color: white;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--bg-card);
+    }
+
+    .champ-node .ms-icon-wrap.locked {
+      opacity: 0.35;
+    }
+
+    .champ-reward-name {
+      color: var(--text-secondary) !important;
+      max-width: 80px !important;
+    }
+
+    /* ============================================ INFOGRAPHIC ============================================ */
+    .earn-section {
+      padding: 18px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .earn-title {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--accent-blue);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .infographic {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px 16px 16px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Pipeline SVG area */
+    .pipeline {
+      position: relative;
+      width: 100%;
+      height: 240px;
+    }
+
+    .pipeline svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .pipeline svg path {
+      fill: none;
+      stroke: #E2E8F0;
+      stroke-width: 2;
+      stroke-dasharray: 6 4;
+    }
+
+    .pipeline svg path.active-flow {
+      stroke: var(--accent-blue);
+      stroke-width: 2.5;
+      stroke-dasharray: 6 4;
+      animation: flowDash 1.5s linear infinite;
+    }
+
+    @keyframes flowDash {
+      to {
+        stroke-dashoffset: -20;
+      }
+    }
+
+    /* Pipeline nodes */
+    .pipe-node {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pipe-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      border: 2.5px solid;
+      background: white;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      z-index: 1;
+    }
+
+    .pipe-label {
+      font-size: 9px;
+      font-weight: 900;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
+      max-width: 70px;
+      line-height: 1.2;
+    }
+
+    .pipe-sublabel {
+      font-size: 8px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: center;
+      max-width: 80px;
+      line-height: 1.2;
+    }
+
+    /* Scale indicators */
+    .scale-row {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .scale-dot {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: white;
+      letter-spacing: 0.3px;
+    }
+
+    .scale-arrow {
+      font-size: 8px;
+      color: var(--text-secondary);
+      font-weight: 900;
+    }
+
+    /* Double-dip callout */
+    .double-dip-badge {
+      position: absolute;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: var(--accent-blue);
+      color: white;
+      box-shadow: 0 2px 8px rgba(43, 105, 230, 0.3);
+      white-space: nowrap;
+    }
+
+    /* Result node */
+    .result-node {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, var(--accent-blue-light), rgba(43, 105, 230, 0.05));
+      border: 1.5px solid var(--accent-blue-mid);
+      border-radius: var(--radius-sm);
+    }
+
+    .result-icon {
+      font-size: 22px;
+    }
+
+    .result-text {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-tap-hint {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .info-tap-hint:hover {
+      background: var(--accent-blue-light);
+    }
+
+    .earn-details-expanded {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+    }
+
+    .earn-details-expanded.open {
+      max-height: 1200px;
+    }
+
+    .earn-source {
+      margin-bottom: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .source-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      background: #F8FAFC;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .source-icon {
+      font-size: 16px;
+    }
+
+    .source-name {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .source-cap {
+      margin-left: auto;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .cap-overall {
+      color: var(--accent-blue);
+      background: var(--accent-blue-light);
+    }
+
+    .cap-daily {
+      color: var(--accent-orange);
+      background: var(--accent-orange-light);
+    }
+
+    .earn-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .earn-row:last-child {
+      border-bottom: none;
+    }
+
+    .earn-item-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .earn-item-value {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--accent-blue);
+    }
+
+    .cap-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #F8FAFC;
+      border-top: 1px solid var(--border);
+    }
+
+    .cap-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: #E2E8F0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .cap-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .cap-fill-blue {
+      background: var(--accent-blue);
+    }
+
+    .cap-fill-orange {
+      background: var(--accent-orange);
+    }
+
+    .cap-text {
+      font-size: 10px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .cap-type-label {
+      font-size: 8px;
+      font-weight: 800;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 9px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      padding: 10px 20px 0;
+      text-transform: uppercase;
+      line-height: 1.6;
+    }
+
+    .footer-note span {
+      opacity: 0.7;
+    }
+
+    /* ============================================ CLAIM POPUP ============================================ */
+    .claim-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 500;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+    }
+
+    .claim-overlay.open {
+      display: flex;
+    }
+
+    .claim-popup {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 320px;
+      box-shadow: var(--shadow-lg);
+      animation: popIn 0.3s ease;
+      overflow: hidden;
+      position: relative;
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0.85);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .popup-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+      color: white;
+      background: var(--accent-red);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .popup-close:active {
+      opacity: 0.8;
+    }
+
+    .popup-header {
+      background: var(--bg-header);
+      padding: 24px 20px 18px;
+      text-align: center;
+    }
+
+    .popup-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--text-dark-primary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .popup-subtitle {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dark-secondary);
+      margin-top: 4px;
+    }
+
+    .popup-rewards {
+      padding: 16px 20px;
+    }
+
+    .popup-reward-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .popup-reward-item:last-child {
+      border-bottom: none;
+    }
+
+    .popup-reward-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      background: var(--accent-blue-light);
+      border: 2px solid var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      animation: rewardBounce 0.5s ease;
+    }
+
+    @keyframes rewardBounce {
+      0% {
+        transform: scale(0);
+      }
+
+      60% {
+        transform: scale(1.15);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .popup-reward-info {
+      flex: 1;
+    }
+
+    .popup-reward-name {
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--text-primary);
+      text-transform: uppercase;
+    }
+
+    .popup-reward-from {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .popup-reward-amount {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--accent-blue);
+      flex-shrink: 0;
+    }
+
+    .popup-footer {
+      padding: 0 20px 20px;
+    }
+
+    .popup-ok-btn {
+      width: 100%;
+      padding: 12px;
+      font-family: 'Inter';
+      font-size: 13px;
+      font-weight: 900;
+      color: white;
+      background: var(--accent-blue);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .popup-ok-btn:active {
+      opacity: 0.85;
+    }
+
+    /* ============================================ NEW DESIGN ELEMENTS ============================================ */
+    /* Ribbons */
+    .card-ribbon {
+      position: absolute;
+      top: 10px;
+      left: -4px;
+      z-index: 10;
+      padding: 4px 8px 4px 6px;
+      font-size: 9px;
+      font-weight: 900;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      clip-path: none;
+      box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .card-ribbon::before {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 4px;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.4);
+      clip-path: polygon(0 0, 100% 0, 100% 100%);
+    }
+
+    .ribbon-token {
+      background: var(--accent-blue);
+    }
+
+    .ribbon-buff {
+      background: var(--accent-orange);
+    }
+
+    .ribbon-clan {
+      background: var(--accent-purple);
+    }
+
+    .ribbon-weekend {
+      background: var(--accent-green);
+    }
+
+    .ribbon-weekend-buff {
+      background: var(--accent-gold);
+    }
+
+    /* Event Segments */
+    .section-container {
+      padding: 4px 0 16px;
+      position: relative;
+    }
+
+    .section-container.upcoming-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-dark);
+      opacity: 0.85;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .section-label::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .active-section .section-label {
+      color: var(--text-primary);
+    }
+
+    .active-section .section-label::before {
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    /* New HUD Compass */
+    .hud-compass-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .compass-ring {
+      fill: none;
+      stroke: var(--border-dark);
+      stroke-width: 2;
+    }
+
+    .compass-active {
+      fill: none;
+      stroke: var(--accent-blue);
+      stroke-width: 3;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 4px var(--accent-blue));
+    }
+
+    .compass-needle {
+      fill: var(--accent-red);
+      transform-origin: center;
+      animation: compassSpin 10s ease-in-out infinite alternate;
+    }
+
+    @keyframes compassSpin {
+      0% {
+        transform: rotate(-20deg)
+      }
+
+      100% {
+        transform: rotate(20deg)
+      }
+    }
+
+    /* Clean Blue Infographic (Grid Layout) */
+    .infographic {
+      overflow: visible;
+      border: none;
+      background: none;
+      padding: 10px 0;
+      box-shadow: none;
+    }
+
+    .pipeline-container {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px 16px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .clean-flow-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: auto auto auto;
+      gap: 30px 10px;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    /* Dashed Connectors (Absolute to container) */
+    .connector-line {
+      position: absolute;
+      background: none;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .line-dash-h {
+      border-top: 3px dashed var(--accent-blue);
+      height: 2px;
+      top: 32px;
+    }
+
+    .line-dash-v {
+      border-left: 3px dashed var(--accent-blue);
+      width: 2px;
+    }
+
+    /* Horizontal Flows */
+    .flow-1-2 {
+      left: 55px;
+      width: 50px;
+    }
+
+    /* Energy -> Maw */
+    .flow-2-3 {
+      left: 165px;
+      width: 50px;
+    }
+
+    /* Maw -> Cores */
+
+    .clean-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      background: white;
+      border: 2px solid var(--accent-blue);
+      border-radius: 16px;
+      z-index: 2;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(43, 105, 230, 0.15);
+    }
+
+    .clean-node-icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .clean-node-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .ingot-result-box {
+      grid-column: 2 / span 2;
+      background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+      border: 2px solid var(--accent-blue);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      margin-top: 10px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .ingot-icon {
+      font-size: 24px;
+    }
+
+    .ingot-text-main {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    .ingot-text-sub {
+      font-size: 10px;
+      color: #64748B;
+      font-weight: 600;
+    }
+
+    /* ── Infographic: Premium Clean Blue ── */
+    .ig-wrap {
+      background: linear-gradient(160deg, #F0F6FF 0%, #F8FAFC 40%, #FFF8F0 100%);
+      border: 1px solid rgba(43, 105, 230, 0.12);
+      border-radius: 16px;
+      padding: 16px 12px 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ig-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-orange));
+      border-radius: 16px 16px 0 0;
+    }
+
+    /* Vertical step */
+    .ig-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .ig-arrow {
+      width: 0;
+      height: 22px;
+      border-left: 2px dashed rgba(43, 105, 230, 0.35);
+      animation: dashPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes dashPulse {
+
+      0%,
+      100% {
+        border-color: rgba(43, 105, 230, 0.25);
+      }
+
+      50% {
+        border-color: rgba(43, 105, 230, 0.6);
+      }
+    }
+
+    .ig-arrow-head {
+      font-size: 9px;
+      color: var(--accent-blue);
+      line-height: 1;
+      margin-top: -4px;
+      margin-bottom: 3px;
+      opacity: 0.6;
+    }
+
+    /* Node pill (unused now, kept for future) */
+    .ig-node {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      border: 2px solid var(--accent-blue);
+      border-radius: 12px;
+      padding: 8px 14px;
+      box-shadow: 0 2px 8px rgba(43, 105, 230, 0.08);
+    }
+
+    .ig-node-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .ig-node-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ig-node-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .ig-node-sub {
+      font-size: 9px;
+      color: #64748B;
+      font-weight: 600;
+    }
+
+    /* ── Branch split ── */
+    .ig-branch {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .ig-branch-card {
+      flex: 1;
+      max-width: 155px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(43, 105, 230, 0.15);
+      border-radius: 14px;
+      padding: 14px 10px 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 2px 10px rgba(43, 105, 230, 0.06);
+    }
+
+    .ig-branch-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(43, 105, 230, 0.12);
+    }
+
+    .ig-branch-card .ig-bc-icon {
+      font-size: 24px;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    }
+
+    .ig-branch-card .ig-bc-title {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+      line-height: 1.3;
+    }
+
+    .ig-branch-card .ig-bc-desc {
+      font-size: 9px;
+      color: #64748B;
+      line-height: 1.35;
+      margin-top: 2px;
+    }
+
+    .ig-branch-card .ig-bc-desc b {
+      color: #475569;
+      font-weight: 700;
+    }
+
+    .ig-branch-label {
+      font-size: 7px;
+      font-weight: 800;
+      color: white;
+      background: linear-gradient(135deg, #2B69E6, #1E50B0);
+      border-radius: 6px;
+      padding: 3px 8px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      box-shadow: 0 1px 4px rgba(43, 105, 230, 0.3);
+    }
+
+    /* ── Result node ── */
+    .ig-result {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 50%, #FEF3C7 100%);
+      border: 2px solid rgba(234, 88, 12, 0.3);
+      border-radius: 16px;
+      padding: 12px 18px;
+      box-shadow:
+        0 4px 14px rgba(234, 88, 12, 0.1),
+        0 0 0 4px rgba(234, 88, 12, 0.04);
+      animation: resultGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes resultGlow {
+
+      0%,
+      100% {
+        box-shadow: 0 4px 14px rgba(234, 88, 12, 0.1), 0 0 0 4px rgba(234, 88, 12, 0.04);
+      }
+
+      50% {
+        box-shadow: 0 4px 18px rgba(234, 88, 12, 0.18), 0 0 0 6px rgba(234, 88, 12, 0.06);
+      }
+    }
+
+    .ig-result-icon {
+      font-size: 26px;
+      filter: drop-shadow(0 2px 3px rgba(234, 88, 12, 0.2));
+    }
+
+    .ig-result-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: #C2410C;
+      letter-spacing: 0.3px;
+    }
+
+    .ig-result-sub {
+      font-size: 9px;
+      color: #9A3412;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+
+    /* Compact result footer */
+    .ig-result-footer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 7px 12px;
+      background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
+      border: 1px solid rgba(234, 88, 12, 0.18);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(234, 88, 12, 0.06);
+    }
+
+    .ig-rf-icon {
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .ig-rf-text {
+      font-size: 10px;
+      color: #9A3412;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .ig-rf-text b {
+      color: #C2410C;
+      font-weight: 800;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- DEBUG -->
+  <div class="debug-panel" id="debugPanel">
+    <div class="debug-close" onclick="toggleDebug()">✕</div>
+    <div class="debug-title">Debug Controls</div>
+
+    <div class="debug-section">
+      <div class="debug-label">Timeline — Simulate Day</div>
+      <div class="debug-timeline" id="dayButtons">
+        <div class="debug-day-btn active" onclick="setDay(0)">MON</div>
+        <div class="debug-day-btn" onclick="setDay(1)">TUE</div>
+        <div class="debug-day-btn" onclick="setDay(2)">WED</div>
+        <div class="debug-day-btn" onclick="setDay(3)">THU</div>
+        <div class="debug-day-btn" onclick="setDay(4)">FRI</div>
+        <div class="debug-day-btn" onclick="setDay(5)">SAT</div>
+        <div class="debug-day-btn" onclick="setDay(6)">SUN</div>
+      </div>
+      <div class="debug-time-label" id="timeLabel">Monday — Early Week</div>
+      <div class="debug-label" style="margin-top:8px;">Time of Day</div>
+      <div class="debug-row">
+        <input type="range" class="debug-slider" id="hourSlider" min="0" max="23" value="12"
+          oninput="updateHour(this.value)">
+        <span class="debug-val" id="hourVal">12:00</span>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <div class="debug-label">Charsi's Progress (Ember Ingots)</div>
+      <div class="debug-row">
+        <input type="range" class="debug-slider" id="progressSlider" min="0" max="100" value="12"
+          oninput="updateProgress(this.value)">
+        <span class="debug-val" id="progressVal">12%</span>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <div class="debug-label">Weekend Progress (Skill Scrolls)</div>
+      <div class="debug-row">
+        <input type="range" class="debug-slider" id="wkndProgressSlider" min="0" max="100" value="0"
+          oninput="updateWkndProgress(this.value)">
+        <span class="debug-val" id="wkndProgressVal">0%</span>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <div class="debug-label">HUD</div>
+      <div class="debug-row" style="gap:6px;">
+        <button class="debug-btn" style="flex:1;" onclick="setBadge(0)">Badge 0</button>
+        <button class="debug-btn" style="flex:1;" onclick="setBadge(3)">Badge 3</button>
+        <button class="debug-btn" style="flex:1;" onclick="toggleNew()">NEW</button>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <div class="debug-label">Milestones</div>
+      <button class="debug-btn" onclick="setMilestones('none')">None Claimed</button>
+      <button class="debug-btn" onclick="setMilestones('partial')">3 Claimed + 1 Ready</button>
+      <button class="debug-btn" onclick="setMilestones('all')">All Claimed</button>
+    </div>
+
+    <div class="debug-section">
+      <div class="debug-label">Simulate Actions</div>
+      <div class="debug-row" style="gap:6px;flex-wrap:wrap;">
+        <button class="debug-btn" style="flex:1;min-width:90px;" onclick="simCoreEarn('I')">+Core I</button>
+        <button class="debug-btn" style="flex:1;min-width:90px;" onclick="simCoreEarn('II')">+Core II</button>
+        <button class="debug-btn" style="flex:1;min-width:90px;" onclick="simCoreEarn('III')">+Core III</button>
+      </div>
+      <div class="debug-row" style="gap:6px;margin-top:4px;flex-wrap:wrap;">
+        <button class="debug-btn" style="flex:1;min-width:90px;" onclick="simForgeGear('I')">Forge w/ Core I</button>
+        <button class="debug-btn" style="flex:1;min-width:90px;" onclick="simForgeGear('II')">Forge w/ Core II</button>
+        <button class="debug-btn" style="flex:1;min-width:90px;" onclick="simForgeGear('III')">Forge w/ Core
+          III</button>
+      </div>
+      <div class="debug-row" style="margin-top:6px;">
+        <span class="debug-val" id="simLog" style="font-size:9px;color:#64748B;text-align:left;flex:1;">—</span>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <div class="debug-label">Quick Open</div>
+      <button class="debug-btn" onclick="openMenu()">Event Menu</button>
+      <button class="debug-btn" onclick="openDetail('charsi')">Charsi Detail</button>
+      <button class="debug-btn" onclick="openDetail('weekend')">Weekend Detail</button>
+      <button class="debug-btn" onclick="showClaimPopup()">Claim Popup</button>
+    </div>
+  </div>
+  <div class="debug-tab" id="debugTab" onclick="toggleDebug()">DEBUG</div>
+
+  <!-- PHONE FRAME -->
+  <div class="phone-frame" id="phoneFrame">
+    <div class="game-bg"></div>
+
+    <!-- HUD -->
+    <div class="hud-icon" onclick="openMenu()">
+      <div class="hud-ring-container">
+        <svg class="hud-compass-svg" viewBox="0 0 64 64">
+          <circle class="compass-ring" cx="32" cy="32" r="28" style="stroke:var(--bg-header-light);" />
+          <circle class="compass-active" cx="32" cy="32" r="28" stroke-dasharray="175" stroke-dashoffset="60" />
+          <path class="compass-needle" d="M32 10 L36 32 L32 54 L28 32 Z" />
+          <circle cx="32" cy="32" r="3" fill="var(--bg-header)" />
+        </svg>
+        <div class="hud-center-icon" style="z-index:5;">✨</div>
+      </div>
+      <!-- Moved badges after container for natural stacking, plus explicit Z-index in CSS -->
+      <div class="hud-new-tag" id="hudNew">NEW</div>
+      <div class="hud-badge" id="hudBadge">2</div>
+      <div class="hud-timer" id="hudTimer">2d 22h</div>
+      <div class="hud-label">EVENTS</div>
+    </div>
+
+    <!-- EVENT MENU -->
+    <div class="event-menu" id="eventMenu">
+      <div class="menu-header">
+        <div class="menu-title">Events</div>
+        <div class="close-btn" onclick="closeMenu()">✕</div>
+      </div>
+      <div class="img-placeholder menu-img-placeholder">
+        <span class="img-placeholder-text">IMAGE</span>
+        <span class="img-placeholder-sub">Art Asset · Menu Banner</span>
+      </div>
+      <div class="mini-calendar">
+        <div class="cal-toggle" id="calToggle" onclick="toggleCalendar()">
+          <span class="cal-toggle-text">This Week's Schedule</span>
+          <span class="cal-toggle-arrow">▼</span>
+        </div>
+        <div class="cal-body" id="calBody">
+          <div class="cal-days" id="calDays">
+            <div class="cal-day today">MON</div>
+            <div class="cal-day">TUE</div>
+            <div class="cal-day">WED</div>
+            <div class="cal-day">THU</div>
+            <div class="cal-day">FRI</div>
+            <div class="cal-day">SAT</div>
+            <div class="cal-day">SUN</div>
+          </div>
+          <div class="cal-gantt" id="calGantt">
+            <div class="gantt-row">
+              <div class="gantt-label">CHARSI</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:0%;width:64.3%;background:var(--accent-blue);">⛏ Farm → Forge</div>
+                <div class="gantt-now-line" id="ganttNow" style="left:5%"></div>
+              </div>
+            </div>
+            <div class="gantt-row">
+              <div class="gantt-label">MAW</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:0%;width:28.6%;background:var(--accent-orange);">+20%</div>
+              </div>
+            </div>
+            <div class="gantt-row">
+              <div class="gantt-label">CB</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:28.6%;width:28.6%;background:var(--accent-purple);">×2 DMG</div>
+              </div>
+            </div>
+            <div class="gantt-row">
+              <div class="gantt-label">WKND</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:64.3%;width:35.7%;background:var(--accent-green);">Skill Focus</div>
+              </div>
+            </div>
+            <div class="gantt-row">
+              <div class="gantt-label">GOLDEN</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:64.3%;width:35.7%;background:var(--accent-gold);">×2 Rewards</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="event-list" id="eventList">
+        <div class="section-container active-section">
+          <div class="section-label" id="activeLabel">Active Events</div>
+
+          <div class="event-card token-card has-claim" id="charsiCard" data-event="charsi"
+            onclick="openDetail('charsi')">
+            <div class="card-main">
+              <div class="card-top">
+                <div class="card-name">Charsi's Dedication</div>
+                <div class="card-timer timer-ending" id="charsiTimer">Ends 2d 22h</div>
+              </div>
+              <div class="card-pills" style="display:none;"></div>
+              <div class="card-desc">Farm Cores → Forge Gear → Earn Ingots. Double-dip.</div>
+              <div class="card-progress">
+                <div class="progress-label"><span class="token-name">🔥 Ember Ingots</span><span class="token-count"
+                    id="cardProgressText">1,850 / 5,200</span></div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill fill-blue" id="cardProgressBar" style="width:35.6%"></div>
+                </div>
+              </div>
+              <div class="card-milestone-mini" id="cardMiniDots">
+                <div class="mini-dot claimed"></div>
+                <div class="mini-dot claimed"></div>
+                <div class="mini-dot claimable"></div>
+                <div class="mini-dot locked"></div>
+                <div class="mini-dot locked"></div>
+                <span class="milestone-status">1 Reward Ready</span>
+              </div>
+            </div>
+            <div class="card-claim-banner show" id="cardClaimBanner"><span>⭐ Rewards ready</span><span>Tap to view
+                →</span></div>
+          </div>
+
+          <div class="event-card buff-card" id="mawCard" data-event="maw" onclick="toggleBuff('maw')">
+            <div class="card-main">
+              <div class="card-top">
+                <div class="card-name">Maw Surge</div><span class="buff-chevron">▼</span>
+                <div class="card-timer timer-active" id="mawTimer">1d 14h</div>
+              </div>
+              <div class="card-pills"><span class="pill pill-buff">Buff · 48h</span></div>
+              <div class="card-desc">+20% Frozen Maw drops</div>
+            </div>
+            <div class="buff-expand" id="mawExpand">
+              <div class="buff-expand-inner">
+                <div class="buff-detail-row"><span class="buff-detail-label">Dungeon</span><span
+                    class="buff-detail-value">Frozen Maw</span></div>
+                <div class="buff-detail-row"><span class="buff-detail-label">Boost</span><span
+                    class="buff-detail-value">+20% All Tiers</span></div>
+                <div class="buff-synergy">
+                  <div class="buff-synergy-text">🔗 Boosts Charsi's farming — more Cores = more Ingots</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="event-card buff-card" id="cbCard" data-event="cb" onclick="toggleBuff('cb')"
+            style="border-left-color:var(--accent-purple);">
+            <div class="card-main">
+              <div class="card-top">
+                <div class="card-name">Clan Boss Frenzy</div><span class="buff-chevron">▼</span>
+                <div class="card-timer" id="cbTimer">Starts 1d 10h</div>
+              </div>
+              <div class="card-pills"><span class="pill pill-clan">Clan · 48h</span></div>
+              <div class="card-desc">×2 Total Damage — normal keys</div>
+            </div>
+            <div class="buff-expand" id="cbExpand">
+              <div class="buff-expand-inner">
+                <div class="buff-detail-row"><span class="buff-detail-label">Multiplier</span><span
+                    class="buff-detail-value">×2 Total</span></div>
+                <div class="buff-detail-row"><span class="buff-detail-label">Scope</span><span
+                    class="buff-detail-value">Clan-wide</span></div>
+                <div class="buff-synergy">
+                  <div class="buff-synergy-text">🔗 Higher CB tiers drop Cores & Gems for Forge + Weekend</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="section-container upcoming-section">
+          <div class="section-label" id="upcomingLabel">Coming Soon</div>
+
+          <div class="event-card weekend-card upcoming-card" id="weekendCard" data-event="weekend"
+            onclick="openDetail('weekend')">
+            <div class="card-main">
+              <div class="card-top">
+                <div class="card-name">Weekend: Skill Focus</div>
+                <div class="card-timer timer-starting" id="weekendTimer">Starts 4d 6h</div>
+              </div>
+              <div class="card-pills"><span class="pill"
+                  style="background:var(--accent-green-light);color:var(--accent-green);">Skill Scrolls</span></div>
+              <div class="card-desc">Earn tickets, pull skills, evolve.</div>
+              <div class="card-progress">
+                <div class="progress-label"><span class="token-name" style="color:var(--accent-green)">📜 Skill
+                    Scrolls</span><span class="token-count">— / —</span></div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill fill-green" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="event-card weekend-buff-card upcoming-card" id="goldenCard" data-event="golden"
+            onclick="toggleBuff('golden')" style="border-left-color:var(--accent-gold);">
+            <div class="card-main">
+              <div class="card-top">
+                <div class="card-name">Golden Hours</div><span class="buff-chevron">▼</span>
+                <div class="card-timer timer-starting" id="goldenTimer">Starts 4d 6h</div>
+              </div>
+              <div class="card-pills"><span class="pill pill-weekend-buff">Weekend Buff</span></div>
+              <div class="card-desc">×2 Session + Quest Rewards</div>
+            </div>
+            <div class="buff-expand" id="goldenExpand">
+              <div class="buff-expand-inner">
+                <div class="buff-detail-row"><span class="buff-detail-label">Session</span><span
+                    class="buff-detail-value">×2</span></div>
+                <div class="buff-detail-row"><span class="buff-detail-label">Quests</span><span
+                    class="buff-detail-value">×2 Daily & Weekly</span></div>
+                <div class="buff-synergy">
+                  <div class="buff-synergy-text">🔗 Doubled resources fuel Weekend Rotation</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARSI DETAIL -->
+    <div class="event-detail" id="detailCharsi">
+      <div class="detail-header">
+        <div class="detail-close-btn" onclick="closeDetail('charsi')">✕</div>
+        <div class="img-placeholder detail-img-placeholder"><span class="img-placeholder-text">IMAGE</span><span
+            class="img-placeholder-sub">Art Asset · Event Banner</span></div>
+        <div class="detail-header-content">
+          <div class="detail-title">Charsi's Dedication</div>
+          <div class="detail-subtitle">Farm Cores from Frozen Maw, spend them in the Forge, earn Ember Ingots from
+            both.</div>
+          <div class="detail-stats">
+            <div class="detail-stat"><span class="stat-label" id="charsiDetailLabel">Ends In</span><span
+                class="stat-value" id="detailTimer">2d 22h</span></div>
+            <div class="detail-stat"><span class="stat-label">Ingots</span><span class="stat-value"
+                id="detailIngots">1,850</span></div>
+            <div class="detail-stat"><span class="stat-label">Milestones</span><span class="stat-value"
+                id="detailMilestones">4 / 11</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-body">
+        <div class="milestone-section">
+          <div class="milestone-header">
+            <div class="milestone-title">Milestone Rewards</div><button class="claim-all-btn"
+              onclick="handleClaimAll()">Claim All</button>
+          </div>
+          <div class="milestone-row-label">Core Rewards</div>
+          <div class="milestone-track-container">
+            <div class="milestone-track-inner">
+              <div class="milestone-connector">
+                <div class="milestone-connector-fill fill-connector-blue" id="connectorFill1" style="width:38%"></div>
+              </div>
+              <div class="milestone-track" id="milestoneTrack1">
+                <div class="milestone-node" onclick="handleClaimSingle(this,'Energy ×200','⚡')">
+                  <div class="ms-threshold reached">100</div>
+                  <div class="ms-icon-wrap claimed">⚡</div>
+                  <div class="ms-reward-name">Energy ×200</div>
+                </div>
+                <div class="milestone-node" onclick="handleClaimSingle(this,'Gems ×75','💎')">
+                  <div class="ms-threshold reached">300</div>
+                  <div class="ms-icon-wrap claimed">💎</div>
+                  <div class="ms-reward-name">Gems ×75</div>
+                </div>
+                <div class="milestone-node" onclick="handleClaimSingle(this,'Charms ×25','🏅')">
+                  <div class="ms-threshold reached">600</div>
+                  <div class="ms-icon-wrap claimed">🏅</div>
+                  <div class="ms-reward-name">Charms ×25</div>
+                </div>
+                <div class="milestone-node" onclick="handleClaimSingle(this,'Gold ×5,000','🪙')">
+                  <div class="ms-threshold reached">1,000</div>
+                  <div class="ms-icon-wrap claimable">🪙</div>
+                  <div class="ms-reward-name">Gold ×5,000</div>
+                </div>
+                <div class="milestone-node" onclick="handleClaimSingle(this,'Core II ×10','💠')">
+                  <div class="ms-threshold">1,600</div>
+                  <div class="ms-icon-wrap locked">💠</div>
+                  <div class="ms-reward-name">Core II ×10</div>
+                </div>
+                <div class="milestone-node" onclick="handleClaimSingle(this,'Rune ×3','🔮')">
+                  <div class="ms-threshold">2,400</div>
+                  <div class="ms-icon-wrap locked">🔮</div>
+                  <div class="ms-reward-name">Rune ×3</div>
+                </div>
+                <div class="milestone-node" onclick="handleClaimSingle(this,'Epic Rune ×1','✨')">
+                  <div class="ms-threshold">3,500</div>
+                  <div class="ms-icon-wrap locked">✨</div>
+                  <div class="ms-reward-name">Epic Rune ×1</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="champ-section">
+            <div class="champ-bg-shimmer"></div>
+            <div class="champ-header">
+              <span class="champ-header-text">Champion Rewards</span>
+            </div>
+            <div class="milestone-track-container" style="overflow:visible;">
+              <div class="milestone-track-inner" style="width:auto;transition:none;">
+                <div class="milestone-track" id="champTrack" style="justify-content:space-around;">
+                  <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Epic Weapon','⚔️')"
+                    data-threshold="5000">
+                    <div class="ms-threshold champ-threshold">5,000</div>
+                    <div class="ms-icon-wrap locked">⚔️</div>
+                    <div class="ms-reward-name champ-reward-name">Epic Weapon</div>
+                  </div>
+                  <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Legend Armor','🛡️')"
+                    data-threshold="8000">
+                    <div class="ms-threshold champ-threshold">8,000</div>
+                    <div class="ms-icon-wrap locked">🛡️</div>
+                    <div class="ms-reward-name champ-reward-name">Legend Armor</div>
+                  </div>
+                  <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Mythic Weapon','🔥')"
+                    data-threshold="12000">
+                    <div class="ms-threshold champ-threshold">12,000</div>
+                    <div class="ms-icon-wrap locked">🔥</div>
+                    <div class="ms-reward-name champ-reward-name">Mythic Weapon</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INFOGRAPHIC -->
+        <div class="earn-section">
+          <div class="earn-title">How to Earn</div>
+          <div class="infographic">
+            <div class="ig-wrap">
+              <!-- Branch: Two ways to earn Ingots -->
+              <div class="ig-branch">
+                <!-- Path A: Earn Cores -->
+                <div class="ig-branch-card">
+                  <div class="ig-branch-label">Collect</div>
+                  <div class="ig-bc-icon">⛏→💠</div>
+                  <div class="ig-bc-title">Play Frozen Maw<br>to Earn Cores</div>
+                  <div class="ig-bc-desc">Every Core gives Ember Ingots.<br><b>Higher tier = more Ingots</b></div>
+                </div>
+                <!-- Path B: Forge -->
+                <div class="ig-branch-card">
+                  <div class="ig-branch-label">Craft</div>
+                  <div class="ig-bc-icon">🔨→⚔️</div>
+                  <div class="ig-bc-title">Forge Gear</div>
+                  <div class="ig-bc-desc">Spend Cores to forge.<br><b>Core tier + Gear rarity<br>= Ingots</b></div>
+                </div>
+              </div>
+              <!-- Compact result footer -->
+              <div class="ig-result-footer">
+                <span class="ig-rf-icon">🔥</span>
+                <span class="ig-rf-text">Both paths earn <b>Ember Ingots</b> → Milestone Rewards</span>
+              </div>
+
+              <div class="info-tap-hint" id="tapHint" onclick="toggleEarnDetails()"
+                style="margin-top:12px;cursor:pointer;">▼ Exact numbers & caps</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="earn-details-expanded" id="earnDetails">
+          <div class="earn-source">
+            <div class="source-header"><span class="source-icon">⛏</span><span class="source-name">Maw
+                Drops</span><span class="source-cap cap-overall">Event: 2,000</span></div>
+            <div>
+              <div class="earn-row"><span class="earn-item-label">Core I</span><span class="earn-item-value">+1</span>
+              </div>
+              <div class="earn-row"><span class="earn-item-label">Core II</span><span class="earn-item-value">+50</span>
+              </div>
+              <div class="earn-row"><span class="earn-item-label">Core III</span><span
+                  class="earn-item-value">+250</span></div>
+            </div>
+            <div class="cap-indicator">
+              <div style="display:flex;flex-direction:column;gap:2px;min-width:80px;"><span
+                  class="cap-type-label">Overall</span><span class="cap-text">812 / 2,000</span></div>
+              <div class="cap-bar-bg">
+                <div class="cap-bar-fill cap-fill-blue" style="width:40.6%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="earn-source">
+            <div class="source-header"><span class="source-icon">🔨</span><span class="source-name">Forge
+                Actions</span><span class="source-cap cap-overall">Event: 2,000</span></div>
+            <div>
+              <div class="earn-row"><span class="earn-item-label">Spend Core I</span><span
+                  class="earn-item-value">+1</span></div>
+              <div class="earn-row"><span class="earn-item-label">Spend Core II</span><span
+                  class="earn-item-value">+50</span></div>
+              <div class="earn-row"><span class="earn-item-label">Spend Core III</span><span
+                  class="earn-item-value">+250</span></div>
+            </div>
+            <div class="cap-indicator">
+              <div style="display:flex;flex-direction:column;gap:2px;min-width:80px;"><span
+                  class="cap-type-label">Overall</span><span class="cap-text">538 / 2,000</span></div>
+              <div class="cap-bar-bg">
+                <div class="cap-bar-fill cap-fill-blue" style="width:26.9%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="earn-source">
+            <div class="source-header"><span class="source-icon">⚔️</span><span class="source-name">Gear
+                Rarity</span><span class="source-cap cap-daily">Daily: 300</span></div>
+            <div>
+              <div class="earn-row"><span class="earn-item-label">Common</span><span class="earn-item-value">+5</span>
+              </div>
+              <div class="earn-row"><span class="earn-item-label">Rare</span><span class="earn-item-value">+25</span>
+              </div>
+              <div class="earn-row"><span class="earn-item-label">Epic</span><span class="earn-item-value">+100</span>
+              </div>
+              <div class="earn-row"><span class="earn-item-label">Legendary</span><span
+                  class="earn-item-value">+300</span></div>
+            </div>
+            <div class="cap-indicator">
+              <div style="display:flex;flex-direction:column;gap:2px;min-width:80px;"><span
+                  class="cap-type-label">Today</span><span class="cap-text">75 / 300</span></div>
+              <div class="cap-bar-bg">
+                <div class="cap-bar-fill cap-fill-orange" style="width:25%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="footer-note">Gear cap resets daily 00:00 UTC <span>· Unclaimed rewards mailed 24h after event
+            ends</span></div>
+      </div>
+    </div>
+
+    <!-- WEEKEND DETAIL -->
+    <div class="event-detail" id="detailWeekend">
+    <div class="detail-header">
+      <div class="detail-close-btn" onclick="closeDetail('weekend')">✕</div>
+      <div class="img-placeholder detail-img-placeholder" style="background:linear-gradient(135deg,#1a2e2a,#1e2836);">
+        <span class="img-placeholder-text">IMAGE</span><span class="img-placeholder-sub">Art Asset · Event Banner</span>
+      </div>
+      <div class="detail-header-content">
+        <div class="detail-title">Skill Mastery</div>
+        <div class="detail-subtitle">Earn Skill Tickets from dungeons, pull skills, evolve. Higher rarity skills give
+          more Scrolls.</div>
+        <div class="detail-stats">
+          <div class="detail-stat"><span class="stat-label" id="wkndDetailLabel">Starts In</span><span
+              class="stat-value" style="color:var(--accent-green);" id="wkndDetailTimer">4d 6h</span></div>
+          <div class="detail-stat"><span class="stat-label">Scrolls</span><span class="stat-value"
+              style="color:var(--accent-green);" id="wkndDetailScrolls">0</span></div>
+          <div class="detail-stat"><span class="stat-label">Milestones</span><span class="stat-value"
+              style="color:var(--accent-green);" id="wkndDetailMilestones">0 / 8</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-body">
+      <div class="milestone-section">
+        <div class="milestone-header">
+          <div class="milestone-title" style="color:var(--accent-green);">Milestone Rewards</div><button
+            class="claim-all-btn disabled" id="wkndClaimAllBtn" onclick="handleWkndClaimAll()"
+            style="background:var(--accent-green);">Claim All</button>
+        </div>
+        <div class="milestone-row-label">Core Rewards</div>
+        <div class="milestone-track-container">
+          <div class="milestone-track-inner" style="width:400px;">
+            <div class="milestone-connector">
+              <div class="milestone-connector-fill fill-connector-green" id="wkndConnectorFill" style="width:0%"></div>
+            </div>
+            <div class="milestone-track" id="wkndMilestoneTrack">
+              <div class="milestone-node" onclick="handleWkndClaimSingle(this,'Energy ×100','⚡')">
+                <div class="ms-threshold">100</div>
+                <div class="ms-icon-wrap locked">⚡</div>
+                <div class="ms-reward-name">Energy ×100</div>
+              </div>
+              <div class="milestone-node" onclick="handleWkndClaimSingle(this,'Gems ×50','💎')">
+                <div class="ms-threshold">300</div>
+                <div class="ms-icon-wrap locked">💎</div>
+                <div class="ms-reward-name">Gems ×50</div>
+              </div>
+              <div class="milestone-node" onclick="handleWkndClaimSingle(this,'Silver Chest','📦')">
+                <div class="ms-threshold">600</div>
+                <div class="ms-icon-wrap locked">📦</div>
+                <div class="ms-reward-name">Silver Chest</div>
+              </div>
+              <div class="milestone-node" onclick="handleWkndClaimSingle(this,'Skill Ticket ×5','🎯')">
+                <div class="ms-threshold">1,200</div>
+                <div class="ms-icon-wrap locked">🎯</div>
+                <div class="ms-reward-name">Skill Ticket ×5</div>
+              </div>
+              <div class="milestone-node" onclick="handleWkndClaimSingle(this,'Gold Chest','🏅')">
+                <div class="ms-threshold">2,000</div>
+                <div class="ms-icon-wrap locked">🏅</div>
+                <div class="ms-reward-name">Gold Chest</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="champ-section">
+          <div class="champ-bg-shimmer"></div>
+          <div class="champ-header">
+            <span class="champ-header-text">Champion Rewards</span>
+          </div>
+          <div class="milestone-track-container" style="overflow:visible;">
+            <div class="milestone-track-inner" style="width:auto;transition:none;">
+              <div class="milestone-track" id="wkndChampTrack" style="justify-content:space-around;">
+                <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Rare Skill Select','⚔️')"
+                  data-threshold="3000">
+                  <div class="ms-threshold champ-threshold">3,000</div>
+                  <div class="ms-icon-wrap locked">⚔️</div>
+                  <div class="ms-reward-name champ-reward-name">Rare Skill Select</div>
+                </div>
+                <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Epic Skill Select','🛡️')"
+                  data-threshold="5000">
+                  <div class="ms-threshold champ-threshold">5,000</div>
+                  <div class="ms-icon-wrap locked">🛡️</div>
+                  <div class="ms-reward-name champ-reward-name">Epic Skill Select</div>
+                </div>
+                <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Legendary Skill','🔥')"
+                  data-threshold="8000">
+                  <div class="ms-threshold champ-threshold">8,000</div>
+                  <div class="ms-icon-wrap locked">🔥</div>
+                  <div class="ms-reward-name champ-reward-name">Legendary Skill</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INFOGRAPHIC -->
+      <div class="earn-section">
+        <div class="earn-title">How to Earn</div>
+        <div class="infographic">
+          <div class="ig-wrap">
+            <div class="ig-branch" style="gap:6px;">
+              <div class="ig-branch-card" style="max-width:120px;padding:12px 6px 10px;">
+                <div class="ig-branch-label" style="background:var(--accent-green-light);color:var(--accent-green);">
+                  Dungeon</div>
+                <div class="ig-bc-icon">⛏→🎫</div>
+                <div class="ig-bc-title" style="font-size:10px;">Run Dungeons</div>
+                <div class="ig-bc-desc">Cursed Heartwood.<br><b>Earn Skill Tickets</b></div>
+              </div>
+              <div class="ig-branch-card" style="max-width:120px;padding:12px 6px 10px;">
+                <div class="ig-branch-label" style="background:var(--accent-purple-light);color:var(--accent-purple);">
+                  Summon</div>
+                <div class="ig-bc-icon">🎫→⭐</div>
+                <div class="ig-bc-title" style="font-size:10px;">Pull Skills</div>
+                <div class="ig-bc-desc">Use tickets to pull.<br><b>Every pull = Scrolls</b></div>
+              </div>
+              <div class="ig-branch-card" style="max-width:120px;padding:12px 6px 10px;">
+                <div class="ig-branch-label" style="background:var(--accent-gold-light);color:var(--accent-gold);">
+                  Evolve</div>
+                <div class="ig-bc-icon">⭐→🌟</div>
+                <div class="ig-bc-title" style="font-size:10px;">Evolve Skills</div>
+                <div class="ig-bc-desc">Level up skills.<br><b>Rarer = more</b></div>
+              </div>
+            </div>
+            <div class="ig-result-footer" style="background:var(--accent-green-light);">
+              <span class="ig-rf-icon">📜</span>
+              <span class="ig-rf-text" style="color:var(--accent-green);">All paths earn <b>Skill Scrolls</b> →
+                Milestone Rewards</span>
+            </div>
+
+            <div class="info-tap-hint" id="wkndTapHint" onclick="toggleWkndEarnDetails()"
+              style="margin-top:12px;cursor:pointer;">▼ Exact numbers & caps</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="earn-details-expanded" id="wkndEarnDetails">
+        <div class="earn-source">
+          <div class="source-header"><span class="source-icon">⛏</span><span class="source-name">Dungeon
+              Tickets</span><span class="source-cap cap-overall">Event: 1,500</span></div>
+          <div>
+            <div class="earn-row"><span class="earn-item-label">Cursed Heartwood</span><span class="earn-item-value">+5 per
+                run</span></div>
+          </div>
+          <div class="cap-indicator">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:80px;"><span
+                class="cap-type-label">Overall</span><span class="cap-text">0 / 1,500</span></div>
+            <div class="cap-bar-bg">
+              <div class="cap-bar-fill cap-fill-green" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="earn-source">
+          <div class="source-header"><span class="source-icon">🎫</span><span class="source-name">Skill
+              Summon</span><span class="source-cap cap-daily">No Cap</span></div>
+          <div>
+            <div class="earn-row"><span class="earn-item-label">Per Pull</span><span class="earn-item-value">+15</span>
+            </div>
+            <div class="earn-row"><span class="earn-item-label">10-Pull Bonus</span><span
+                class="earn-item-value">+200</span></div>
+          </div>
+        </div>
+        <div class="earn-source">
+          <div class="source-header"><span class="source-icon">🌟</span><span class="source-name">Skill
+              Evolve</span><span class="source-cap cap-daily">Daily: 500</span></div>
+          <div>
+            <div class="earn-row"><span class="earn-item-label">Common</span><span class="earn-item-value">+5</span>
+            </div>
+            <div class="earn-row"><span class="earn-item-label">Rare</span><span class="earn-item-value">+20</span>
+            </div>
+            <div class="earn-row"><span class="earn-item-label">Epic</span><span class="earn-item-value">+80</span>
+            </div>
+            <div class="earn-row"><span class="earn-item-label">Legendary</span><span
+                class="earn-item-value">+250</span></div>
+          </div>
+          <div class="cap-indicator">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:80px;"><span
+                class="cap-type-label">Today</span><span class="cap-text">0 / 500</span></div>
+            <div class="cap-bar-bg">
+              <div class="cap-bar-fill cap-fill-orange" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-note">Evolve cap resets daily 00:00 UTC <span>· Unclaimed rewards mailed 24h after event
+          ends</span></div>
+    </div>
+  </div>
+
+  <!-- CLAIM POPUP -->
+  <div class="claim-overlay" id="claimOverlay">
+    <div class="claim-popup">
+      <div class="popup-close" onclick="closeClaimPopup()">✕</div>
+      <div class="popup-header">
+        <div class="popup-title">Rewards Claimed!</div>
+        <div class="popup-subtitle">Charsi's Dedication</div>
+      </div>
+      <div class="popup-rewards" id="popupRewards"></div>
+      <div class="popup-footer"><button class="popup-ok-btn" onclick="closeClaimPopup()">Awesome</button></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- FLOATING TOAST -->
+  <div class="event-toast" id="eventToast">
+    <div class="toast-label">Event starts in</div>
+    <div class="toast-time" id="toastTime">—</div>
+  </div>
+
+  <script>
+    // ============================================ NAV ============================================
+    function openMenu() { const m = document.getElementById('eventMenu'); m.classList.add('open'); setTimeout(() => m.style.opacity = '1', 10); }
+    function closeMenu() { const m = document.getElementById('eventMenu'); m.style.opacity = '0'; setTimeout(() => m.classList.remove('open'), 250); }
+    function openDetail(id) {
+      // Check if event is currently active before opening
+      const evt = EVENTS[id];
+      if (evt) {
+        const nowTotal = currentDay * 24 + currentHour;
+        const evtStart = evt.start[0] * 24 + evt.start[1];
+        const evtEnd = evt.end[0] * 24 + evt.end[1];
+        if (nowTotal < evtStart) {
+          showEventToast('Starts in ' + formatTime(evtStart - nowTotal));
+          return;
+        }
+        if (nowTotal >= evtEnd) {
+          showEventToast('Event has ended');
+          return;
+        }
+      }
+      const d = document.getElementById('detail' + id.charAt(0).toUpperCase() + id.slice(1));
+      if (!d) return;
+      d.classList.add('open');
+      setTimeout(() => d.style.opacity = '1', 10);
+    }
+    let toastTimer = null;
+    function showEventToast(msg) {
+      const toast = document.getElementById('eventToast');
+      const timeEl = document.getElementById('toastTime');
+      if (msg.startsWith('Starts')) {
+        toast.querySelector('.toast-label').textContent = 'Event starts in';
+        timeEl.textContent = msg.replace('Starts in ', '');
+        timeEl.style.color = 'var(--accent-green)';
+      } else {
+        toast.querySelector('.toast-label').textContent = 'Status';
+        timeEl.textContent = msg;
+        timeEl.style.color = 'var(--text-secondary)';
+      }
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+    function closeDetail(id) { const d = document.getElementById('detail' + id.charAt(0).toUpperCase() + id.slice(1)); if (!d) return; d.style.opacity = '0'; setTimeout(() => d.classList.remove('open'), 250); }
+    function toggleCalendar() { document.getElementById('calToggle').classList.toggle('expanded'); document.getElementById('calBody').classList.toggle('expanded'); }
+    function toggleBuff(id) {
+      const map = { maw: 'mawExpand', cb: 'cbExpand', golden: 'goldenExpand' };
+      const cards = { maw: 'mawCard', cb: 'cbCard', golden: 'goldenCard' };
+      Object.keys(map).forEach(k => { if (k !== id) { document.getElementById(map[k])?.classList.remove('open'); document.getElementById(cards[k])?.classList.remove('expanded'); } });
+      document.getElementById(map[id])?.classList.toggle('open'); document.getElementById(cards[id])?.classList.toggle('expanded');
+    }
+    function toggleEarnDetails() {
+      const d = document.getElementById('earnDetails'), h = document.getElementById('tapHint');
+      d.classList.toggle('open'); h.textContent = d.classList.contains('open') ? '▲ Hide details' : '▼ Exact numbers & caps';
+    }
+    function toggleWkndEarnDetails() {
+      const d = document.getElementById('wkndEarnDetails'), h = document.getElementById('wkndTapHint');
+      d.classList.toggle('open'); h.textContent = d.classList.contains('open') ? '▲ Hide details' : '▼ Exact numbers & caps';
+    }
+
+    // ============================================ WEEKEND SKILL MASTERY ============================================
+    const WKND_CORE_THRESHOLDS = [100, 300, 600, 1200, 2000];
+    const WKND_CHAMP_THRESHOLDS = [3000, 5000, 8000];
+    const WKND_MAX_SCROLLS = 8000;
+    let currentScrolls = 0;
+
+    function updateWkndProgress(val) {
+      document.getElementById('wkndProgressVal').textContent = val + '%';
+      currentScrolls = Math.round(WKND_MAX_SCROLLS * val / 100);
+      document.getElementById('wkndDetailScrolls').textContent = currentScrolls.toLocaleString();
+      updateWkndMilestoneStates();
+    }
+
+    function updateWkndMilestoneStates() {
+      // Core rewards track
+      const coreNodes = document.querySelectorAll('#wkndMilestoneTrack .milestone-node');
+      const coreFill = document.getElementById('wkndConnectorFill');
+      let lastReached = -1;
+      coreNodes.forEach((node, i) => {
+        const wrap = node.querySelector('.ms-icon-wrap');
+        const th = node.querySelector('.ms-threshold');
+        if (currentScrolls >= WKND_CORE_THRESHOLDS[i]) {
+          lastReached = i;
+          th.classList.add('reached');
+          if (!wrap.classList.contains('claimed')) {
+            wrap.className = 'ms-icon-wrap claimable';
+          }
+        } else {
+          th.classList.remove('reached');
+          wrap.className = 'ms-icon-wrap locked';
+        }
+      });
+      const N = coreNodes.length;
+      if (lastReached < 0) coreFill.style.width = '0%';
+      else if (lastReached >= N - 1) coreFill.style.width = '100%';
+      else {
+        const nodePos = (lastReached / (N - 1)) * 100;
+        const nextPos = ((lastReached + 1) / (N - 1)) * 100;
+        const nextTh = WKND_CORE_THRESHOLDS[lastReached + 1];
+        const curTh = WKND_CORE_THRESHOLDS[lastReached];
+        const frac = Math.min(1, (currentScrolls - curTh) / (nextTh - curTh));
+        coreFill.style.width = (nodePos + frac * (nextPos - nodePos) * 0.5) + '%';
+      }
+      // Champion reward nodes
+      const champNodes = document.querySelectorAll('#wkndChampTrack .champ-node');
+      champNodes.forEach((node) => {
+        const threshold = parseInt(node.dataset.threshold);
+        const wrap = node.querySelector('.ms-icon-wrap');
+        const th = node.querySelector('.ms-threshold');
+        if (currentScrolls >= threshold) {
+          if (th) th.classList.add('reached');
+          if (!wrap.classList.contains('claimed')) {
+            wrap.className = 'ms-icon-wrap claimable';
+          }
+        } else {
+          if (th) th.classList.remove('reached');
+          if (!wrap.classList.contains('claimed')) {
+            wrap.className = 'ms-icon-wrap locked';
+          }
+        }
+      });
+      // Milestone count
+      const claimedCore = document.querySelectorAll('#wkndMilestoneTrack .ms-icon-wrap.claimed').length;
+      const claimedChamp = document.querySelectorAll('#wkndChampTrack .ms-icon-wrap.claimed').length;
+      const totalCore = coreNodes.length;
+      const totalChamp = champNodes.length;
+      document.getElementById('wkndDetailMilestones').textContent = (claimedCore + claimedChamp) + ' / ' + (totalCore + totalChamp);
+      // Claim All button state
+      const hasClaimable = document.querySelectorAll('#detailWeekend .ms-icon-wrap.claimable').length;
+      const claimBtn = document.getElementById('wkndClaimAllBtn');
+      if (hasClaimable > 0) { claimBtn.classList.remove('disabled'); claimBtn.style.background = 'var(--accent-green)'; }
+      else { claimBtn.classList.add('disabled'); claimBtn.style.background = '#CBD5E1'; }
+      updateHUDNotifications();
+      scrollMilestoneTrack('#wkndMilestoneTrack');
+    }
+
+    function handleWkndClaimSingle(nodeEl, rewardName, icon) {
+      const wrap = nodeEl.querySelector('.ms-icon-wrap');
+      if (!wrap || !wrap.classList.contains('claimable')) return;
+      wrap.className = 'ms-icon-wrap claimed';
+      showClaimPopupWith([{ name: rewardName, icon: icon, from: 'Skill Mastery', amount: '×1' }]);
+      updateWkndMilestoneStates();
+    }
+
+    function handleWkndClaimAll() {
+      const claimables = document.querySelectorAll('#detailWeekend .ms-icon-wrap.claimable');
+      if (!claimables.length) return;
+      const rewards = [];
+      claimables.forEach(w => {
+        const node = w.closest('.milestone-node') || w.closest('.champ-node');
+        const name = node?.querySelector('.ms-reward-name, .champ-reward-name')?.textContent || 'Reward';
+        rewards.push({ name, icon: w.textContent.trim(), from: 'Skill Mastery', amount: '×1' });
+        w.className = 'ms-icon-wrap claimed';
+      });
+      showClaimPopupWith(rewards);
+      updateWkndMilestoneStates();
+    }
+
+    // ============================================ NOTIFICATION LOGIC ============================================
+    function updateHUDNotifications() {
+      // Scan for any claimable items in the DOM
+      // We look for .ms-icon-wrap.claimable (milestones) AND .mini-dot.claimable (card indicators)
+      // Note: card indicators might be duplicate of milestones, so best to count milestones.
+      const claimables = document.querySelectorAll('.ms-icon-wrap.claimable');
+      const count = claimables.length;
+
+      const badge = document.getElementById('hudBadge');
+      const newTag = document.getElementById('hudNew');
+
+      if (count > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = count;
+        // Logic for NEW tag: Show if there are rewards? Or just keep it separate? 
+        // User asked for "red dot logic". The number badge serves as the red dot.
+        // We'll ensure it's visible.
+      } else {
+        badge.style.display = 'none';
+      }
+
+      // Toggle card claim banners
+      const charsiClaimable = document.querySelectorAll('#detailCharsi .ms-icon-wrap.claimable').length > 0;
+      document.getElementById('cardClaimBanner').classList.toggle('show', charsiClaimable);
+    }
+
+    // ============================================ CLAIMS ============================================
+    function handleClaimSingle(el, name, icon) {
+      const w = el.querySelector('.ms-icon-wrap'); if (!w || !w.classList.contains('claimable')) return;
+      w.classList.remove('claimable'); w.classList.add('claimed');
+      const th = el.querySelector('.ms-threshold'); if (th) th.classList.add('reached');
+      showClaimPopupWith([{ icon, name, from: "Charsi's Dedication", amount: '×1' }]);
+      updateHUDNotifications();
+      scrollMilestoneTrack('#milestoneTrack1');
+    }
+
+    function handleClaimAll() {
+      const items = []; document.querySelectorAll('#detailCharsi .ms-icon-wrap.claimable').forEach(el => {
+        const name = el.parentElement.querySelector('.ms-reward-name').textContent; const icon = el.textContent.trim();
+        const w = el;
+        w.classList.remove('claimable'); w.classList.add('claimed');
+        const th = el.parentElement.querySelector('.ms-threshold'); if (th) th.classList.add('reached');
+        items.push({ icon, name, from: "Charsi's Dedication", amount: '×1' });
+      });
+      if (items.length > 0) { showClaimPopupWith(items); updateHUDNotifications(); scrollMilestoneTrack('#milestoneTrack1'); }
+    }
+    function showClaimPopupWith(items) {
+      document.getElementById('popupRewards').innerHTML = items.map((it, i) => `
+    <div class="popup-reward-item"><div class="popup-reward-icon" style="animation-delay:${i * 0.15}s">${it.icon}</div>
+    <div class="popup-reward-info"><div class="popup-reward-name">${it.name}</div><div class="popup-reward-from">From: ${it.from}</div></div>
+    <div class="popup-reward-amount">${it.amount}</div></div>`).join('');
+      document.getElementById('claimOverlay').classList.add('open');
+    }
+    function showClaimPopup() { showClaimPopupWith([{ icon: '⚡', name: 'Energy ×50', from: 'Milestone 1', amount: '×50' }, { icon: '💎', name: 'Gems ×15', from: 'Milestone 2', amount: '×15' }, { icon: '🏅', name: 'Charms ×5', from: 'Milestone 3', amount: '×5' }]); }
+    function closeClaimPopup() { document.getElementById('claimOverlay').classList.remove('open'); }
+    function updateBadge(delta) { const b = document.getElementById('hudBadge'); let c = parseInt(b.textContent) + delta; if (c <= 0) { b.style.display = 'none'; } else { b.style.display = 'flex'; b.textContent = c; } }
+
+    // ============================================ DEBUG ============================================
+    function toggleDebug() { document.getElementById('debugPanel').classList.toggle('open'); }
+
+    // Event schedule: [startDay, startHour, endDay, endHour]
+    const EVENTS = {
+      charsi: { start: [0, 0], end: [4, 12], card: 'charsiCard', timer: 'charsiTimer', type: 'token' },
+      maw: { start: [0, 0], end: [2, 12], card: 'mawCard', timer: 'mawTimer', type: 'buff' },
+      cb: { start: [2, 12], end: [4, 12], card: 'cbCard', timer: 'cbTimer', type: 'buff' },
+      weekend: { start: [4, 18], end: [6, 23], card: 'weekendCard', timer: 'weekendTimer', type: 'token' },
+      golden: { start: [4, 18], end: [6, 23], card: 'goldenCard', timer: 'goldenTimer', type: 'buff' }
+    };
+
+    const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const PHASES = ['Monday — Farm Phase', 'Tuesday — Farm Phase', 'Wednesday — Forge Begins', 'Thursday — Forge Phase', 'Friday — Transition Day', 'Saturday — Weekend Events', 'Sunday — Final Push'];
+
+    let currentDay = 0;
+    let currentHour = 12;
+
+    function setDay(d) {
+      currentDay = d;
+      document.querySelectorAll('.debug-day-btn').forEach((b, i) => { b.classList.toggle('active', i === d); });
+      document.getElementById('timeLabel').textContent = PHASES[d];
+      updateTimeline();
+    }
+
+    function updateHour(h) {
+      currentHour = parseInt(h);
+      document.getElementById('hourVal').textContent = String(h).padStart(2, '0') + ':00';
+      updateTimeline();
+    }
+
+    // Milestone thresholds for the 7 core reward nodes
+    const CORE_THRESHOLDS = [100, 300, 600, 1000, 1600, 2400, 3500];
+    const CHAMPION_THRESHOLDS = [5000, 8000, 12000];
+    const MAX_INGOTS = 12000;
+    let currentIngots = Math.round(MAX_INGOTS * 12 / 100); // initial 12%
+
+    function updateProgress(val) {
+      document.getElementById('progressVal').textContent = val + '%';
+      document.getElementById('cardProgressBar').style.width = val + '%';
+      currentIngots = Math.round(MAX_INGOTS * val / 100);
+      document.getElementById('cardProgressText').textContent = currentIngots.toLocaleString() + ' / ' + MAX_INGOTS.toLocaleString();
+      document.getElementById('detailIngots').textContent = currentIngots.toLocaleString();
+      updateMilestoneStates();
+    }
+
+    function updateMilestoneStates() {
+      // Core rewards track
+      const coreNodes = document.querySelectorAll('#milestoneTrack1 .milestone-node');
+      const coreFill = document.getElementById('connectorFill1');
+      let lastReached = -1;
+      coreNodes.forEach((node, i) => {
+        const wrap = node.querySelector('.ms-icon-wrap');
+        const th = node.querySelector('.ms-threshold');
+        if (currentIngots >= CORE_THRESHOLDS[i]) {
+          lastReached = i;
+          th.classList.add('reached');
+          if (!wrap.classList.contains('claimed')) {
+            wrap.className = 'ms-icon-wrap claimable';
+          }
+        } else {
+          th.classList.remove('reached');
+          wrap.className = 'ms-icon-wrap locked';
+        }
+      });
+      // Fill bar: nodes are positioned with space-between, so node i is at i/(N-1)*100%
+      const N = coreNodes.length;
+      if (lastReached < 0) { coreFill.style.width = '0%'; }
+      else if (lastReached >= N - 1) { coreFill.style.width = '100%'; }
+      else {
+        const nodePos = (lastReached / (N - 1)) * 100;
+        // Interpolate toward next node
+        const nextPos = ((lastReached + 1) / (N - 1)) * 100;
+        const nextTh = CORE_THRESHOLDS[lastReached + 1];
+        const curTh = CORE_THRESHOLDS[lastReached];
+        const frac = Math.min(1, (currentIngots - curTh) / (nextTh - curTh));
+        coreFill.style.width = (nodePos + frac * (nextPos - nodePos) * 0.5) + '%';
+      }
+      // Champion reward nodes
+      const champNodes = document.querySelectorAll('#champTrack .champ-node');
+      const champFill = document.getElementById('connectorFillChamp');
+      let champLastReached = -1;
+      champNodes.forEach((node, i) => {
+        const threshold = parseInt(node.dataset.threshold);
+        const wrap = node.querySelector('.ms-icon-wrap');
+        const th = node.querySelector('.ms-threshold');
+        if (currentIngots >= threshold) {
+          champLastReached = i;
+          if (th) th.classList.add('reached');
+          if (!wrap.classList.contains('claimed')) {
+            wrap.className = 'ms-icon-wrap claimable';
+          }
+        } else {
+          if (th) th.classList.remove('reached');
+          if (!wrap.classList.contains('claimed')) {
+            wrap.className = 'ms-icon-wrap locked';
+          }
+        }
+      });
+      // Champion connector fill
+      if (champFill) {
+        const CN = champNodes.length;
+        if (champLastReached < 0) champFill.style.width = '0%';
+        else if (champLastReached >= CN - 1) champFill.style.width = '100%';
+        else {
+          const cp = (champLastReached / (CN - 1)) * 100;
+          const cnp = ((champLastReached + 1) / (CN - 1)) * 100;
+          const ct = CHAMPION_THRESHOLDS[champLastReached];
+          const cnt = CHAMPION_THRESHOLDS[champLastReached + 1];
+          const cf = Math.min(1, (currentIngots - ct) / (cnt - ct));
+          champFill.style.width = (cp + cf * (cnp - cp) * 0.5) + '%';
+        }
+      }
+      // Milestone count (core + champion)
+      const claimedCore = document.querySelectorAll('#milestoneTrack1 .ms-icon-wrap.claimed').length;
+      const claimedChamp = document.querySelectorAll('#champTrack .ms-icon-wrap.claimed').length;
+      const totalCore = document.querySelectorAll('#milestoneTrack1 .milestone-node').length;
+      const totalChamp = champNodes.length;
+      document.getElementById('detailMilestones').textContent = (claimedCore + claimedChamp) + ' / ' + (totalCore + totalChamp);
+      updateHUDNotifications();
+      scrollMilestoneTrack('#milestoneTrack1');
+    }
+
+    // Auto-scroll: slides track left so the frontier (first non-claimed node) is near the left edge
+    function scrollMilestoneTrack(trackSelector) {
+      const track = document.querySelector(trackSelector);
+      if (!track) return;
+      const inner = track.closest('.milestone-track-inner');
+      const container = inner.parentElement;
+      const nodes = track.querySelectorAll('.milestone-node');
+      if (!nodes.length) return;
+
+      // Find the frontier: first claimable or first locked (whichever comes first)
+      let frontierIdx = 0;
+      nodes.forEach((n, i) => {
+        const wrap = n.querySelector('.ms-icon-wrap');
+        if (wrap && wrap.classList.contains('claimed')) frontierIdx = i + 1;
+      });
+      // Show 1 claimed node before the frontier
+      const showFrom = Math.max(0, frontierIdx - 1);
+
+      if (showFrom <= 0) {
+        inner.style.transform = 'translateX(0)';
+        return;
+      }
+
+      // Calculate how far to shift: each node center is at index/(N-1) * trackWidth
+      const trackWidth = inner.offsetWidth;
+      const containerWidth = container.offsetWidth;
+      const nodeOffset = (showFrom / (nodes.length - 1)) * trackWidth;
+      // Don't over-scroll past the end
+      const maxShift = Math.max(0, trackWidth - containerWidth + 32);
+      const shift = Math.min(nodeOffset - 16, maxShift);
+      inner.style.transform = 'translateX(-' + Math.max(0, shift) + 'px)';
+    }
+
+    function setBadge(n) { const b = document.getElementById('hudBadge'); if (n <= 0) b.style.display = 'none'; else { b.style.display = 'flex'; b.textContent = n; } }
+    function toggleNew() { const n = document.getElementById('hudNew'); n.style.display = n.style.display === 'block' ? 'none' : 'block'; }
+
+    function setMilestones(state) {
+      const nodes = document.querySelectorAll('#milestoneTrack1 .ms-icon-wrap');
+      const fill = document.getElementById('connectorFill1');
+      if (state === 'none') {
+        nodes.forEach(n => n.className = 'ms-icon-wrap locked');
+        document.querySelectorAll('#milestoneTrack1 .ms-threshold').forEach(t => t.classList.remove('reached'));
+        fill.style.width = '0%';
+      } else if (state === 'partial') {
+        nodes.forEach((n, i) => {
+          const th = n.parentElement.querySelector('.ms-threshold');
+          if (i < 3) { n.className = 'ms-icon-wrap claimed'; th.classList.add('reached'); }
+          else if (i === 3) { n.className = 'ms-icon-wrap claimable'; th.classList.add('reached'); }
+          else { n.className = 'ms-icon-wrap locked'; th.classList.remove('reached'); }
+        });
+        fill.style.width = '50%';
+      } else {
+        nodes.forEach(n => { n.className = 'ms-icon-wrap claimed'; n.parentElement.querySelector('.ms-threshold').classList.add('reached'); });
+        fill.style.width = '100%';
+      }
+      updateHUDNotifications();
+      scrollMilestoneTrack('#milestoneTrack1');
+    }
+
+    // ============ SIMULATE ACTIONS ============
+    const CORE_INGOT_VALUES = { 'I': 10, 'II': 25, 'III': 60 };
+    const GEAR_RARITIES = [
+      { name: 'Common', bonus: 5, weight: 40 },
+      { name: 'Uncommon', bonus: 15, weight: 30 },
+      { name: 'Rare', bonus: 35, weight: 18 },
+      { name: 'Epic', bonus: 75, weight: 9 },
+      { name: 'Legendary', bonus: 150, weight: 3 }
+    ];
+
+    function pickRarity() {
+      const roll = Math.random() * 100;
+      let cum = 0;
+      for (const r of GEAR_RARITIES) { cum += r.weight; if (roll < cum) return r; }
+      return GEAR_RARITIES[0];
+    }
+
+    function addIngots(amount) {
+      currentIngots = Math.min(MAX_INGOTS, currentIngots + amount);
+      const pct = Math.round(currentIngots / MAX_INGOTS * 100);
+      document.getElementById('progressSlider').value = pct;
+      document.getElementById('progressVal').textContent = pct + '%';
+      document.getElementById('cardProgressBar').style.width = pct + '%';
+      document.getElementById('cardProgressText').textContent = currentIngots.toLocaleString() + ' / ' + MAX_INGOTS.toLocaleString();
+      document.getElementById('detailIngots').textContent = currentIngots.toLocaleString();
+      updateMilestoneStates();
+    }
+
+    function simCoreEarn(tier) {
+      const ingots = CORE_INGOT_VALUES[tier];
+      addIngots(ingots);
+      document.getElementById('simLog').textContent = `Earned Core ${tier} → +${ingots} Ember Ingots (Total: ${currentIngots.toLocaleString()})`;
+    }
+
+    function simForgeGear(tier) {
+      const baseIngots = CORE_INGOT_VALUES[tier];
+      const rarity = pickRarity();
+      const total = baseIngots + rarity.bonus;
+      const totalIngots = currentIngots + total; // Fix variable usage if needed or just use addIngots logic
+      addIngots(total);
+      document.getElementById('simLog').textContent = `Forged w/ Core ${tier}: +${baseIngots} (tier) +${rarity.bonus} (${rarity.name} gear) = +${total} Ingots`;
+    }
+
+    function formatTime(totalHours) {
+      const d = Math.floor(totalHours / 24); const h = totalHours % 24;
+      return (d > 0 ? d + 'd ' : '') + h + 'h';
+    }
+
+    function updateTimeline() {
+      const nowTotal = currentDay * 24 + currentHour;
+      // Update Gantt now-line
+      const pct = (nowTotal / (7 * 24)) * 100;
+      document.getElementById('ganttNow').style.left = pct + '%';
+      // Update calendar day highlight
+      document.querySelectorAll('#calDays .cal-day').forEach((d, i) => { d.classList.toggle('today', i === currentDay); });
+
+      // Update each event
+      Object.keys(EVENTS).forEach(key => {
+        const ev = EVENTS[key];
+        const startTotal = ev.start[0] * 24 + ev.start[1];
+        const endTotal = ev.end[0] * 24 + ev.end[1];
+        const card = document.getElementById(ev.card);
+        const timer = document.getElementById(ev.timer);
+        if (!card || !timer) return;
+
+        // Reset classes
+        card.classList.remove('ended-card', 'upcoming-card', 'has-claim', 'hidden-card');
+        card.style.opacity = ''; card.style.borderLeftColor = '';
+
+        if (nowTotal >= endTotal) {
+          // ENDED
+          card.classList.add('ended-card');
+          timer.textContent = 'Ended'; timer.className = 'card-timer timer-ended';
+          if (key === 'charsi') { document.getElementById('cardClaimBanner').classList.remove('show'); }
+        } else if (nowTotal < startTotal) {
+          // UPCOMING
+          card.classList.add('upcoming-card');
+          const diff = startTotal - nowTotal;
+          const dH = Math.floor(diff / 24); const hH = diff % 24;
+          timer.textContent = 'Starts ' + (dH > 0 ? dH + 'd ' : '') + hH + 'h';
+          timer.className = 'card-timer timer-starting';
+        } else {
+          // ACTIVE
+          const diff = endTotal - nowTotal;
+          const dH = Math.floor(diff / 24); const hH = diff % 24;
+          timer.textContent = 'Ends ' + (dH > 0 ? dH + 'd ' : '') + hH + 'h';
+          timer.className = 'card-timer timer-ending';
+          if (key === 'charsi') { card.classList.add('has-claim'); document.getElementById('cardClaimBanner').classList.add('show'); }
+        }
+      });
+
+      // HUD timer: show soonest ending active event, or NEW if something starts within 6h
+      let soonestEnd = Infinity, soonestLabel = '';
+      let newSoon = false;
+      Object.keys(EVENTS).forEach(key => {
+        const ev = EVENTS[key];
+        const startT = ev.start[0] * 24 + ev.start[1];
+        const endT = ev.end[0] * 24 + ev.end[1];
+        if (nowTotal >= startT && nowTotal < endT) {
+          const rem = endT - nowTotal;
+          if (rem < soonestEnd) { soonestEnd = rem; const d = Math.floor(rem / 24); const h = rem % 24; soonestLabel = (d > 0 ? d + 'd ' : '') + h + 'h'; }
+        }
+        if (startT > nowTotal && startT - nowTotal <= 6) newSoon = true;
+      });
+      document.getElementById('hudTimer').textContent = soonestEnd < Infinity ? soonestLabel : '—';
+      document.getElementById('hudNew').style.display = newSoon ? 'block' : 'none';
+
+      // ========== UPDATE DETAIL SCREENS ==========
+      // ========== UPDATE DETAIL SCREENS ==========
+
+      // Charsi detail
+      const charsiStart = EVENTS.charsi.start[0] * 24 + EVENTS.charsi.start[1];
+      const charsiEnd = EVENTS.charsi.end[0] * 24 + EVENTS.charsi.end[1];
+      const charsiLabel = document.getElementById('charsiDetailLabel');
+      const charsiTimer2 = document.getElementById('detailTimer');
+      if (nowTotal >= charsiEnd) {
+        charsiLabel.textContent = 'Status'; charsiTimer2.textContent = 'Ended';
+      } else if (nowTotal < charsiStart) {
+        charsiLabel.textContent = 'Starts In'; charsiTimer2.textContent = formatTime(charsiStart - nowTotal);
+      } else {
+        charsiLabel.textContent = 'Ends In'; charsiTimer2.textContent = formatTime(charsiEnd - nowTotal);
+      }
+
+      // Weekend detail
+      const wkndStart = EVENTS.weekend.start[0] * 24 + EVENTS.weekend.start[1];
+      const wkndEnd = EVENTS.weekend.end[0] * 24 + EVENTS.weekend.end[1];
+      const wkndLabel = document.getElementById('wkndDetailLabel');
+      const wkndTimer2 = document.getElementById('wkndDetailTimer');
+
+      if (nowTotal >= wkndEnd) {
+        wkndLabel.textContent = 'Status'; wkndTimer2.textContent = 'Ended';
+      } else if (nowTotal < wkndStart) {
+        wkndLabel.textContent = 'Starts In'; wkndTimer2.textContent = formatTime(wkndStart - nowTotal);
+      } else {
+        wkndLabel.textContent = 'Ends In'; wkndTimer2.textContent = formatTime(wkndEnd - nowTotal);
+      }
+    }
+
+    updateTimeline();
+    updateHUDNotifications();
+    scrollMilestoneTrack('#milestoneTrack1');
+  </script>
+</body>
+
+</html>
