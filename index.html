@@ -954,6 +954,49 @@
       display: flex;
     }
 
+    /* Reward preview on token event cards */
+    .card-reward-preview {
+      float: right;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      margin: 0 0 8px 12px;
+    }
+
+    .card-reward-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      border: 2px solid;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      position: relative;
+    }
+
+    .card-reward-icon .reward-star {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      font-size: 10px;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    }
+
+    .card-reward-label {
+      font-size: 8px;
+      font-weight: 800;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      text-align: center;
+      max-width: 56px;
+      line-height: 1.2;
+    }
+
     .buff-expand {
       max-height: 0;
       overflow: hidden;
@@ -2679,6 +2722,12 @@
                 <div class="card-name">Charsi's Dedication</div>
                 <div class="card-timer timer-ending" id="charsiTimer">Ends 2d 22h</div>
               </div>
+              <div class="card-reward-preview">
+                <div class="card-reward-icon" style="border-color:var(--accent-gold);background:var(--accent-gold-light);">
+                  🔥<span class="reward-star">⭐</span>
+                </div>
+                <div class="card-reward-label">Mythic Weapon</div>
+              </div>
               <div class="card-pills" style="display:none;"></div>
               <div class="card-desc">Farm Cores → Forge Gear → Earn Ingots. Double-dip.</div>
               <div class="card-progress">
@@ -2756,6 +2805,12 @@
               <div class="card-top">
                 <div class="card-name">Weekend: Skill Focus</div>
                 <div class="card-timer timer-starting" id="weekendTimer">Starts 4d 6h</div>
+              </div>
+              <div class="card-reward-preview">
+                <div class="card-reward-icon" style="border-color:var(--accent-gold);background:var(--accent-gold-light);">
+                  🔥<span class="reward-star">⭐</span>
+                </div>
+                <div class="card-reward-label">Legendary Skill</div>
               </div>
               <div class="card-pills"><span class="pill"
                   style="background:var(--accent-green-light);color:var(--accent-green);">Skill Scrolls</span></div>
