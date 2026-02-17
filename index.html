@@ -738,12 +738,55 @@
       border-left-color: #94A3B8;
     }
 
+    .event-card.ended-card.has-rewards {
+      opacity: 0.85;
+      border-left-color: var(--accent-gold);
+    }
+
     .event-card.upcoming-card {
       opacity: 0.6;
     }
 
     .event-card.hidden-card {
       display: none;
+    }
+
+    /* Overlay banner for upcoming/ended detail screens */
+    .detail-state-banner {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .detail-state-banner.upcoming-banner {
+      display: flex;
+      background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.06));
+      color: var(--accent-green);
+      border-bottom: 1px solid rgba(16,185,129,0.2);
+    }
+
+    .detail-state-banner.ended-banner {
+      display: flex;
+      background: linear-gradient(135deg, rgba(148,163,184,0.12), rgba(148,163,184,0.06));
+      color: var(--text-secondary);
+      border-bottom: 1px solid rgba(148,163,184,0.2);
+    }
+
+    .detail-state-banner .banner-icon {
+      font-size: 16px;
+    }
+
+    /* Non-interactive body for upcoming/ended */
+    .detail-body.inactive {
+      pointer-events: none;
+      opacity: 0.45;
     }
 
     .card-main {
@@ -1235,74 +1278,16 @@
 
     .milestone-track-container {
       padding: 0 16px;
-      overflow: visible;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
       position: relative;
     }
 
     .milestone-track-inner {
       position: relative;
       padding: 0 4px;
-      width: 100%;
-    }
-
-    /* Grid layout for milestone rewards — no scroll */
-    .milestone-grid {
-      display: grid !important;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 14px 4px;
-      padding: 10px 6px;
-      justify-items: center;
-      width: 100%;
-    }
-
-    .milestone-grid .milestone-node {
-      min-width: unset;
-    }
-
-    .milestone-grid .ms-icon-wrap {
-      width: 44px;
-      height: 44px;
-      font-size: 18px;
-      border-radius: 10px;
-    }
-
-    .milestone-grid .ms-icon-wrap.claimed::after {
-      width: 16px;
-      height: 16px;
-      font-size: 8px;
-      top: -5px;
-      right: -5px;
-    }
-
-    .milestone-grid .ms-threshold {
-      font-size: 10px;
-      margin-bottom: 4px;
-    }
-
-    .milestone-grid .ms-reward-name {
-      font-size: 8px;
-      margin-top: 4px;
-      max-width: 64px;
-    }
-
-    /* Champion row inside gold wrapper — bigger icons */
-    .champ-grid-row {
-      display: flex;
-      justify-content: space-around;
-      align-items: flex-start;
-      padding: 8px 4px 6px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .champ-grid-row .milestone-node {
-      min-width: unset;
-    }
-
-    .champ-grid-row .ms-icon-wrap {
-      width: 56px;
-      height: 56px;
-      font-size: 24px;
+      width: 560px;
+      transition: transform 0.5s ease;
     }
 
     .milestone-connector {
@@ -2519,24 +2504,6 @@
       box-shadow: 0 1px 4px rgba(43, 105, 230, 0.3);
     }
 
-    /* GO Button for Infographic */
-    .ig-go-btn {
-      margin-top: auto;
-      background: var(--accent-blue);
-      color: white;
-      font-size: 10px;
-      font-weight: 900;
-      padding: 5px 16px;
-      border-radius: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 4px rgba(43, 105, 230, 0.3);
-    }
-
-    .ig-branch-card {
-      padding-bottom: 12px !important;
-    }
-
     /* ── Result node ── */
     .ig-result {
       display: flex;
@@ -2731,6 +2698,56 @@
         <span class="img-placeholder-text">IMAGE</span>
         <span class="img-placeholder-sub">Art Asset · Menu Banner</span>
       </div>
+      <div class="mini-calendar">
+        <div class="cal-toggle" id="calToggle" onclick="toggleCalendar()">
+          <span class="cal-toggle-text">This Week's Schedule</span>
+          <span class="cal-toggle-arrow">▼</span>
+        </div>
+        <div class="cal-body" id="calBody">
+          <div class="cal-days" id="calDays">
+            <div class="cal-day today">MON</div>
+            <div class="cal-day">TUE</div>
+            <div class="cal-day">WED</div>
+            <div class="cal-day">THU</div>
+            <div class="cal-day">FRI</div>
+            <div class="cal-day">SAT</div>
+            <div class="cal-day">SUN</div>
+          </div>
+          <div class="cal-gantt" id="calGantt">
+            <div class="gantt-row">
+              <div class="gantt-label">CHARSI</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:0%;width:64.3%;background:var(--accent-blue);">⛏ Farm → Forge</div>
+                <div class="gantt-now-line" id="ganttNow" style="left:5%"></div>
+              </div>
+            </div>
+            <div class="gantt-row">
+              <div class="gantt-label">MAW</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:0%;width:28.6%;background:var(--accent-orange);">+20%</div>
+              </div>
+            </div>
+            <div class="gantt-row">
+              <div class="gantt-label">CB</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:28.6%;width:28.6%;background:var(--accent-purple);">×2 DMG</div>
+              </div>
+            </div>
+            <div class="gantt-row">
+              <div class="gantt-label">WKND</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:64.3%;width:35.7%;background:var(--accent-green);">Skill Focus</div>
+              </div>
+            </div>
+            <div class="gantt-row">
+              <div class="gantt-label">GOLDEN</div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:64.3%;width:35.7%;background:var(--accent-gold);">×2 Rewards</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="event-list" id="eventList">
         <div class="section-container active-section">
@@ -2758,14 +2775,6 @@
                 <div class="progress-bar-bg">
                   <div class="progress-bar-fill fill-blue" id="cardProgressBar" style="width:35.6%"></div>
                 </div>
-              </div>
-              <div class="card-milestone-mini" id="cardMiniDots">
-                <div class="mini-dot claimed"></div>
-                <div class="mini-dot claimed"></div>
-                <div class="mini-dot claimable"></div>
-                <div class="mini-dot locked"></div>
-                <div class="mini-dot locked"></div>
-                <span class="milestone-status">1 Reward Ready</span>
               </div>
             </div>
             <div class="card-claim-banner show" id="cardClaimBanner"><span>⭐ Rewards ready</span><span>Tap to view
@@ -2897,7 +2906,8 @@
           </div>
         </div>
       </div>
-      <div class="detail-body">
+      <div class="detail-state-banner" id="charsiStateBanner"></div>
+      <div class="detail-body" id="charsiDetailBody">
         <div class="milestone-section">
           <div class="milestone-header">
             <div class="milestone-title">Milestone Rewards</div><button class="claim-all-btn"
@@ -2906,7 +2916,10 @@
           <div class="milestone-row-label">Core Rewards</div>
           <div class="milestone-track-container">
             <div class="milestone-track-inner">
-              <div class="milestone-track milestone-grid" id="milestoneTrack1">
+              <div class="milestone-connector">
+                <div class="milestone-connector-fill fill-connector-blue" id="connectorFill1" style="width:38%"></div>
+              </div>
+              <div class="milestone-track" id="milestoneTrack1">
                 <div class="milestone-node" onclick="handleClaimSingle(this,'Energy ×200','⚡')">
                   <div class="ms-threshold reached">100</div>
                   <div class="ms-icon-wrap claimed">⚡</div>
@@ -2938,52 +2951,40 @@
                   <div class="ms-reward-name">Rune ×3</div>
                 </div>
                 <div class="milestone-node" onclick="handleClaimSingle(this,'Epic Rune ×1','✨')">
-                  <div class="ms-threshold">2,500</div>
+                  <div class="ms-threshold">3,500</div>
                   <div class="ms-icon-wrap locked">✨</div>
                   <div class="ms-reward-name">Epic Rune ×1</div>
-                </div>
-                <div class="milestone-node" onclick="handleClaimSingle(this,'Core III ×3','💠')">
-                  <div class="ms-threshold">3,000</div>
-                  <div class="ms-icon-wrap locked">💠</div>
-                  <div class="ms-reward-name">Core III ×3</div>
-                </div>
-                <div class="milestone-node" onclick="handleClaimSingle(this,'Charm Bag','🎒')">
-                  <div class="ms-threshold">3,500</div>
-                  <div class="ms-icon-wrap locked">🎒</div>
-                  <div class="ms-reward-name">Charm Bag</div>
-                </div>
-                <div class="milestone-node" onclick="handleClaimSingle(this,'Legend Rune','🔮')">
-                  <div class="ms-threshold">4,200</div>
-                  <div class="ms-icon-wrap locked">🔮</div>
-                  <div class="ms-reward-name">Legend Rune</div>
                 </div>
               </div>
             </div>
           </div>
-          <!-- Champion Rewards -->
           <div class="champ-section">
             <div class="champ-bg-shimmer"></div>
             <div class="champ-header">
               <span class="champ-header-text">Tenacious Rewards</span>
             </div>
-            <div class="champ-grid-row" id="champTrack">
-              <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Epic Weapon','⚔️')"
-                data-threshold="5000">
-                <div class="ms-threshold champ-threshold">5,000</div>
-                <div class="ms-icon-wrap locked">⚔️</div>
-                <div class="ms-reward-name champ-reward-name">Epic Weapon</div>
-              </div>
-              <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Legend Armor','🛡️')"
-                data-threshold="8000">
-                <div class="ms-threshold champ-threshold">8,000</div>
-                <div class="ms-icon-wrap locked">🛡️</div>
-                <div class="ms-reward-name champ-reward-name">Legend Armor</div>
-              </div>
-              <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Mythic Weapon','🔥')"
-                data-threshold="12000">
-                <div class="ms-threshold champ-threshold">12,000</div>
-                <div class="ms-icon-wrap locked">🔥</div>
-                <div class="ms-reward-name champ-reward-name">Mythic Weapon</div>
+            <div class="milestone-track-container" style="overflow:visible;">
+              <div class="milestone-track-inner" style="width:auto;transition:none;">
+                <div class="milestone-track" id="champTrack" style="justify-content:space-around;">
+                  <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Epic Weapon','⚔️')"
+                    data-threshold="5000">
+                    <div class="ms-threshold champ-threshold">5,000</div>
+                    <div class="ms-icon-wrap locked">⚔️</div>
+                    <div class="ms-reward-name champ-reward-name">Epic Weapon</div>
+                  </div>
+                  <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Legend Armor','🛡️')"
+                    data-threshold="8000">
+                    <div class="ms-threshold champ-threshold">8,000</div>
+                    <div class="ms-icon-wrap locked">🛡️</div>
+                    <div class="ms-reward-name champ-reward-name">Legend Armor</div>
+                  </div>
+                  <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Mythic Weapon','🔥')"
+                    data-threshold="12000">
+                    <div class="ms-threshold champ-threshold">12,000</div>
+                    <div class="ms-icon-wrap locked">🔥</div>
+                    <div class="ms-reward-name champ-reward-name">Mythic Weapon</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2998,17 +2999,17 @@
               <div class="ig-branch">
                 <!-- Path A: Earn Cores -->
                 <div class="ig-branch-card" onclick="showEventToast('Opens Frozen Maw Menu')" style="cursor:pointer;">
+                  <div class="ig-branch-label">Collect</div>
                   <div class="ig-bc-icon">⛏→💠</div>
                   <div class="ig-bc-title">Play Frozen Maw<br>to Earn Cores</div>
                   <div class="ig-bc-desc">Every Core gives Ember Ingots.<br><b>Higher tier = more Ingots</b></div>
-                  <div class="ig-go-btn">GO</div>
                 </div>
                 <!-- Path B: Forge -->
                 <div class="ig-branch-card" onclick="showEventToast('Opens Auto Forge Pop-Up')" style="cursor:pointer;">
+                  <div class="ig-branch-label">Craft</div>
                   <div class="ig-bc-icon">🔨→⚔️</div>
                   <div class="ig-bc-title">Forge Gear</div>
                   <div class="ig-bc-desc">Spend Cores to forge.<br><b>Core tier = Ingots</b></div>
-                  <div class="ig-go-btn">GO</div>
                 </div>
               </div>
               <!-- Compact result footer -->
@@ -3018,7 +3019,7 @@
               </div>
 
               <div class="info-tap-hint" id="tapHint" onclick="toggleEarnDetails()"
-                style="margin-top:12px;cursor:pointer;">▼ Nerd Details</div>
+                style="margin-top:12px;cursor:pointer;">▼ Nerds Details</div>
             </div>
           </div>
         </div>
@@ -3076,7 +3077,8 @@
           </div>
         </div>
       </div>
-      <div class="detail-body">
+      <div class="detail-state-banner" id="wkndStateBanner"></div>
+      <div class="detail-body" id="wkndDetailBody">
         <div class="milestone-section">
           <div class="milestone-header">
             <div class="milestone-title" style="color:var(--accent-green);">Milestone Rewards</div><button
@@ -3085,8 +3087,12 @@
           </div>
           <div class="milestone-row-label">Core Rewards</div>
           <div class="milestone-track-container">
-            <div class="milestone-track-inner">
-              <div class="milestone-track milestone-grid" id="wkndMilestoneTrack">
+            <div class="milestone-track-inner" style="width:400px;">
+              <div class="milestone-connector">
+                <div class="milestone-connector-fill fill-connector-green" id="wkndConnectorFill" style="width:0%">
+                </div>
+              </div>
+              <div class="milestone-track" id="wkndMilestoneTrack">
                 <div class="milestone-node" onclick="handleWkndClaimSingle(this,'Energy ×100','⚡')">
                   <div class="ms-threshold">100</div>
                   <div class="ms-icon-wrap locked">⚡</div>
@@ -3115,30 +3121,33 @@
               </div>
             </div>
           </div>
-          <!-- Champion Rewards -->
           <div class="champ-section">
             <div class="champ-bg-shimmer"></div>
             <div class="champ-header">
               <span class="champ-header-text">Tenacious Rewards</span>
             </div>
-            <div class="champ-grid-row" id="wkndChampTrack">
-              <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Rare Skill Select','⚔️')"
-                data-threshold="3000">
-                <div class="ms-threshold champ-threshold">3,000</div>
-                <div class="ms-icon-wrap locked">⚔️</div>
-                <div class="ms-reward-name champ-reward-name">Rare Skill Select</div>
-              </div>
-              <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Epic Skill Select','🛡️')"
-                data-threshold="5000">
-                <div class="ms-threshold champ-threshold">5,000</div>
-                <div class="ms-icon-wrap locked">🛡️</div>
-                <div class="ms-reward-name champ-reward-name">Epic Skill Select</div>
-              </div>
-              <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Legendary Skill','🔥')"
-                data-threshold="8000">
-                <div class="ms-threshold champ-threshold">8,000</div>
-                <div class="ms-icon-wrap locked">🔥</div>
-                <div class="ms-reward-name champ-reward-name">Legendary Skill</div>
+            <div class="milestone-track-container" style="overflow:visible;">
+              <div class="milestone-track-inner" style="width:auto;transition:none;">
+                <div class="milestone-track" id="wkndChampTrack" style="justify-content:space-around;">
+                  <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Rare Skill Select','⚔️')"
+                    data-threshold="3000">
+                    <div class="ms-threshold champ-threshold">3,000</div>
+                    <div class="ms-icon-wrap locked">⚔️</div>
+                    <div class="ms-reward-name champ-reward-name">Rare Skill Select</div>
+                  </div>
+                  <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Epic Skill Select','🛡️')"
+                    data-threshold="5000">
+                    <div class="ms-threshold champ-threshold">5,000</div>
+                    <div class="ms-icon-wrap locked">🛡️</div>
+                    <div class="ms-reward-name champ-reward-name">Epic Skill Select</div>
+                  </div>
+                  <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Legendary Skill','🔥')"
+                    data-threshold="8000">
+                    <div class="ms-threshold champ-threshold">8,000</div>
+                    <div class="ms-icon-wrap locked">🔥</div>
+                    <div class="ms-reward-name champ-reward-name">Legendary Skill</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3151,22 +3160,26 @@
             <div class="ig-wrap">
               <div class="ig-branch" style="gap:6px;">
                 <div class="ig-branch-card" style="max-width:120px;padding:12px 6px 10px;">
+                  <div class="ig-branch-label" style="background:var(--accent-green-light);color:var(--accent-green);">
+                    Dungeon</div>
                   <div class="ig-bc-icon">⛏→🎫</div>
                   <div class="ig-bc-title" style="font-size:10px;">Run Dungeons</div>
                   <div class="ig-bc-desc">Cursed Heartwood.<br><b>Earn Skill Tickets</b></div>
-                  <div class="ig-go-btn">GO</div>
                 </div>
                 <div class="ig-branch-card" style="max-width:120px;padding:12px 6px 10px;">
+                  <div class="ig-branch-label"
+                    style="background:var(--accent-purple-light);color:var(--accent-purple);">
+                    Summon</div>
                   <div class="ig-bc-icon">🎫→⭐</div>
                   <div class="ig-bc-title" style="font-size:10px;">Pull Skills</div>
                   <div class="ig-bc-desc">Use tickets to pull.<br><b>Every pull = Scrolls</b></div>
-                  <div class="ig-go-btn">GO</div>
                 </div>
                 <div class="ig-branch-card" style="max-width:120px;padding:12px 6px 10px;">
+                  <div class="ig-branch-label" style="background:var(--accent-gold-light);color:var(--accent-gold);">
+                    Evolve</div>
                   <div class="ig-bc-icon">⭐→🌟</div>
                   <div class="ig-bc-title" style="font-size:10px;">Evolve Skills</div>
                   <div class="ig-bc-desc">Level up skills.<br><b>Rarer = more</b></div>
-                  <div class="ig-go-btn">GO</div>
                 </div>
               </div>
               <div class="ig-result-footer" style="background:var(--accent-green-light);">
@@ -3176,7 +3189,7 @@
               </div>
 
               <div class="info-tap-hint" id="wkndTapHint" onclick="toggleWkndEarnDetails()"
-                style="margin-top:12px;cursor:pointer;">▼ Nerd Details</div>
+                style="margin-top:12px;cursor:pointer;">▼ Nerds Details</div>
             </div>
           </div>
         </div>
@@ -3254,23 +3267,41 @@
     function openMenu() { const m = document.getElementById('eventMenu'); m.classList.add('open'); setTimeout(() => m.style.opacity = '1', 10); }
     function closeMenu() { const m = document.getElementById('eventMenu'); m.style.opacity = '0'; setTimeout(() => m.classList.remove('open'), 250); }
     function openDetail(id) {
-      // Check if event is currently active before opening
       const evt = EVENTS[id];
+      const d = document.getElementById('detail' + id.charAt(0).toUpperCase() + id.slice(1));
+      if (!d) return;
+
+      // Determine state
+      const bannerMap = { charsi: 'charsiStateBanner', weekend: 'wkndStateBanner' };
+      const bodyMap = { charsi: 'charsiDetailBody', weekend: 'wkndDetailBody' };
+      const banner = document.getElementById(bannerMap[id]);
+      const body = document.getElementById(bodyMap[id]);
+
+      if (banner) { banner.className = 'detail-state-banner'; banner.innerHTML = ''; }
+      if (body) body.classList.remove('inactive');
+
       if (evt) {
         const nowTotal = currentDay * 24 + currentHour;
         const evtStart = evt.start[0] * 24 + evt.start[1];
         const evtEnd = evt.end[0] * 24 + evt.end[1];
+
         if (nowTotal < evtStart) {
-          showEventToast('Starts in ' + formatTime(evtStart - nowTotal));
-          return;
-        }
-        if (nowTotal >= evtEnd) {
-          showEventToast('Event has ended');
-          return;
+          // UPCOMING — show timer, body non-interactive
+          if (banner) {
+            banner.className = 'detail-state-banner upcoming-banner';
+            banner.innerHTML = '<span class="banner-icon">⏳</span> Starts in ' + formatTime(evtStart - nowTotal);
+          }
+          if (body) body.classList.add('inactive');
+        } else if (nowTotal >= evtEnd) {
+          // ENDED — show ended banner, body non-interactive
+          if (banner) {
+            banner.className = 'detail-state-banner ended-banner';
+            banner.innerHTML = '<span class="banner-icon">🏁</span> Event has ended';
+          }
+          if (body) body.classList.add('inactive');
         }
       }
-      const d = document.getElementById('detail' + id.charAt(0).toUpperCase() + id.slice(1));
-      if (!d) return;
+
       d.classList.add('open');
       setTimeout(() => d.style.opacity = '1', 10);
     }
@@ -3301,11 +3332,11 @@
     }
     function toggleEarnDetails() {
       const d = document.getElementById('earnDetails'), h = document.getElementById('tapHint');
-      d.classList.toggle('open'); h.textContent = d.classList.contains('open') ? '▲ Hide details' : '▼ Nerd Details';
+      d.classList.toggle('open'); h.textContent = d.classList.contains('open') ? '▲ Hide details' : '▼ Nerds Details';
     }
     function toggleWkndEarnDetails() {
       const d = document.getElementById('wkndEarnDetails'), h = document.getElementById('wkndTapHint');
-      d.classList.toggle('open'); h.textContent = d.classList.contains('open') ? '▲ Hide details' : '▼ Nerd Details';
+      d.classList.toggle('open'); h.textContent = d.classList.contains('open') ? '▲ Hide details' : '▼ Nerds Details';
     }
 
     // ============================================ WEEKEND SKILL MASTERY ============================================
@@ -3495,7 +3526,7 @@
     }
 
     // Milestone thresholds for the 7 core reward nodes
-    const CORE_THRESHOLDS = [100, 300, 600, 1000, 1600, 2000, 2500, 3000, 3500, 4200];
+    const CORE_THRESHOLDS = [100, 300, 600, 1000, 1600, 2400, 3500];
     const CHAMPION_THRESHOLDS = [5000, 8000, 12000];
     const MAX_INGOTS = 12000;
     let currentIngots = Math.round(MAX_INGOTS * 12 / 100); // initial 12%
@@ -3675,10 +3706,10 @@
       const nowTotal = currentDay * 24 + currentHour;
       // Update Gantt now-line
       const pct = (nowTotal / (7 * 24)) * 100;
-      const ganttNow = document.getElementById('ganttNow');
-      if (ganttNow) ganttNow.style.left = pct + '%';
+      const ganttEl = document.getElementById('ganttNow');
+      if (ganttEl) ganttEl.style.left = pct + '%';
       // Update calendar day highlight
-      document.querySelectorAll('#calDays .cal-day').forEach((d, i) => { if(d) d.classList.toggle('today', i === currentDay); });
+      document.querySelectorAll('#calDays .cal-day').forEach((d, i) => { d.classList.toggle('today', i === currentDay); });
 
       // Update each event — sort into Active / Coming Soon / Ended sections
       const activeSection = document.querySelector('.active-section');
@@ -3695,20 +3726,23 @@
         if (!card || !timer) return;
 
         // Reset classes
-        card.classList.remove('ended-card', 'upcoming-card', 'has-claim', 'hidden-card');
+        card.classList.remove('ended-card', 'upcoming-card', 'has-claim', 'hidden-card', 'has-rewards');
         card.style.opacity = ''; card.style.borderLeftColor = '';
 
         if (nowTotal >= endTotal) {
-          // ENDED — show only if ended within last 24 simulated hours
-          const hoursSinceEnd = nowTotal - endTotal;
-          if (hoursSinceEnd <= 24) {
-            card.classList.add('ended-card');
-            timer.textContent = 'Ended'; timer.className = 'card-timer timer-ended';
-            endedSection.appendChild(card);
-            hasEnded = true;
-          } else {
-            card.classList.add('hidden-card');
+          // ENDED — always show, check for claimed rewards
+          card.classList.add('ended-card');
+          timer.textContent = 'Ended'; timer.className = 'card-timer timer-ended';
+
+          // Check if player earned any rewards
+          const detailId = key === 'charsi' ? 'detailCharsi' : key === 'weekend' ? 'detailWeekend' : null;
+          if (detailId) {
+            const claimed = document.querySelectorAll('#' + detailId + ' .ms-icon-wrap.claimed').length;
+            if (claimed > 0) card.classList.add('has-rewards');
           }
+
+          endedSection.appendChild(card);
+          hasEnded = true;
           if (key === 'charsi') { document.getElementById('cardClaimBanner').classList.remove('show'); }
         } else if (nowTotal < startTotal) {
           // UPCOMING
@@ -3814,6 +3848,36 @@
     }
     // Run on load
     updateCardDots('cardMiniDots', '#milestoneTrack1', '#champTrack');
+
+    // ============ ITEM 1: Drag-Scroll for Milestone Tracks ============
+    function enableDragScroll(containerSelector) {
+      document.querySelectorAll(containerSelector).forEach(container => {
+        let isDown = false, startX, scrollLeft;
+        container.style.cursor = 'grab';
+        container.style.overflowX = 'auto';
+        container.style.scrollbarWidth = 'none';
+        container.addEventListener('pointerdown', e => {
+          isDown = true; container.style.cursor = 'grabbing';
+          startX = e.pageX - container.offsetLeft;
+          scrollLeft = container.scrollLeft;
+          container.setPointerCapture(e.pointerId);
+        });
+        container.addEventListener('pointermove', e => {
+          if (!isDown) return;
+          e.preventDefault();
+          const x = e.pageX - container.offsetLeft;
+          container.scrollLeft = scrollLeft - (x - startX);
+        });
+        container.addEventListener('pointerup', e => {
+          isDown = false; container.style.cursor = 'grab';
+          container.releasePointerCapture(e.pointerId);
+        });
+        container.addEventListener('pointerleave', () => {
+          isDown = false; container.style.cursor = 'grab';
+        });
+      });
+    }
+    enableDragScroll('.milestone-track-container');
   </script>
 </body>
 
