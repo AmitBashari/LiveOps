@@ -1361,9 +1361,54 @@
     }
 
     .champ-grid-row .ms-icon-wrap {
-      width: 56px;
-      height: 56px;
-      font-size: 24px;
+      width: 44px;
+      height: 44px;
+      font-size: 18px;
+    }
+
+    /* Points progress bar */
+    .points-bar-section {
+      padding: 10px 20px 6px;
+    }
+
+    .points-bar-track {
+      position: relative;
+      height: 8px;
+      background: #E2E8F0;
+      border-radius: 4px;
+      overflow: visible;
+    }
+
+    .points-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), #5B8DEF);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .points-bar-circle {
+      position: absolute;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border: 3px solid var(--accent-blue);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s ease;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+
+    .points-bar-label {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+
+    .points-bar-label span {
+      color: var(--accent-blue);
     }
 
     .milestone-connector {
@@ -2807,48 +2852,24 @@
                 →</span></div>
           </div>
 
-          <div class="event-card buff-card" id="mawCard" data-event="maw" onclick="toggleBuff('maw')">
+          <div class="event-card buff-card" id="mawCard" data-event="maw">
             <div class="card-main">
               <div class="card-top">
-                <div class="card-name">Maw Surge</div><span class="buff-chevron">▼</span>
+                <div class="card-name">Maw Surge</div>
                 <div class="card-timer timer-active" id="mawTimer">1d 14h</div>
               </div>
-              <div class="card-pills"><span class="pill pill-buff">Buff · 48h</span></div>
-              <div class="card-desc">+20% Frozen Maw drops</div>
-            </div>
-            <div class="buff-expand" id="mawExpand">
-              <div class="buff-expand-inner">
-                <div class="buff-detail-row"><span class="buff-detail-label">Dungeon</span><span
-                    class="buff-detail-value">Frozen Maw</span></div>
-                <div class="buff-detail-row"><span class="buff-detail-label">Boost</span><span
-                    class="buff-detail-value">+20% All Tiers</span></div>
-                <div class="buff-synergy">
-                  <div class="buff-synergy-text">🔗 Boosts Maw farming — more Cores = more Points</div>
-                </div>
-              </div>
+              <div class="card-desc">+20% Frozen Maw rewards</div>
             </div>
           </div>
 
-          <div class="event-card buff-card" id="cbCard" data-event="cb" onclick="toggleBuff('cb')"
+          <div class="event-card buff-card" id="cbCard" data-event="cb"
             style="border-left-color:var(--accent-purple);">
             <div class="card-main">
               <div class="card-top">
-                <div class="card-name">Clan Boss Frenzy</div><span class="buff-chevron">▼</span>
+                <div class="card-name">Clan Boss Frenzy</div>
                 <div class="card-timer" id="cbTimer">Starts 1d 10h</div>
               </div>
-              <div class="card-pills"><span class="pill pill-clan">Clan · 48h</span></div>
-              <div class="card-desc">×2 Total Damage — normal keys</div>
-            </div>
-            <div class="buff-expand" id="cbExpand">
-              <div class="buff-expand-inner">
-                <div class="buff-detail-row"><span class="buff-detail-label">Multiplier</span><span
-                    class="buff-detail-value">×2 Total</span></div>
-                <div class="buff-detail-row"><span class="buff-detail-label">Scope</span><span
-                    class="buff-detail-value">Clan-wide</span></div>
-                <div class="buff-synergy">
-                  <div class="buff-synergy-text">🔗 Higher CB tiers drop Cores & Gems for Forge + Weekend</div>
-                </div>
-              </div>
+              <div class="card-desc">×2 Clan Boss damage</div>
             </div>
           </div>
 
@@ -2884,25 +2905,13 @@
           </div>
 
           <div class="event-card weekend-buff-card upcoming-card" id="goldenCard" data-event="golden"
-            onclick="toggleBuff('golden')" style="border-left-color:var(--accent-gold);">
+            style="border-left-color:var(--accent-gold);">
             <div class="card-main">
               <div class="card-top">
-                <div class="card-name">Golden Hours</div><span class="buff-chevron">▼</span>
+                <div class="card-name">Golden Hours</div>
                 <div class="card-timer timer-starting" id="goldenTimer">Starts 4d 6h</div>
               </div>
-              <div class="card-pills"><span class="pill pill-weekend-buff">Weekend Buff</span></div>
-              <div class="card-desc">×2 Session + Quest Rewards</div>
-            </div>
-            <div class="buff-expand" id="goldenExpand">
-              <div class="buff-expand-inner">
-                <div class="buff-detail-row"><span class="buff-detail-label">Session</span><span
-                    class="buff-detail-value">×2</span></div>
-                <div class="buff-detail-row"><span class="buff-detail-label">Quests</span><span
-                    class="buff-detail-value">×2 Daily & Weekly</span></div>
-                <div class="buff-synergy">
-                  <div class="buff-synergy-text">🔗 Doubled resources fuel Weekend Rotation</div>
-                </div>
-              </div>
+              <div class="card-desc">×2 Session + Quest rewards</div>
             </div>
           </div>
         </div>
@@ -3015,9 +3024,18 @@
           </div>
         </div>
 
+        <!-- POINTS PROGRESS BAR -->
+        <div class="points-bar-section">
+          <div class="points-bar-track">
+            <div class="points-bar-fill" id="charsiPointsFill" style="width:37%"></div>
+            <div class="points-bar-circle" id="charsiPointsCircle" style="left:37%"></div>
+          </div>
+          <div class="points-bar-label"><span id="charsiPointsText">1,850</span> / 5,000</div>
+        </div>
+
         <!-- INFOGRAPHIC -->
         <div class="earn-section">
-          <div class="earn-title">How to Earn</div>
+          <div class="earn-title">How to Earn Points</div>
           <div class="infographic">
             <div class="ig-wrap">
               <div class="ig-branch">
@@ -3034,7 +3052,7 @@
               </div>
               <div class="ig-result-footer">
                 <span class="ig-rf-icon">🔥</span>
-                <span class="ig-rf-text"><b>Every Core earned</b> and <b>every Core spent</b> in the Forge gives Points</span>
+                <span class="ig-rf-text">Earn and spend Cores to win rewards</span>
               </div>
 
               <div class="info-tap-hint" id="tapHint" onclick="toggleEarnDetails()"
@@ -3045,7 +3063,7 @@
 
         <div class="earn-details-expanded" id="earnDetails">
           <div class="earn-source">
-            <div class="source-header"><span class="source-icon">⛏</span><span class="source-name">Maw Drop → Points</span></div>
+            <div class="source-header"><span class="source-icon">⛏</span><span class="source-name">Earn Cores</span></div>
             <div>
               <div class="earn-row"><span class="earn-item-label">Core I drop</span><span class="earn-item-value">+1 pt</span></div>
               <div class="earn-row"><span class="earn-item-label">Core II drop</span><span class="earn-item-value">+50 pts</span></div>
@@ -3053,7 +3071,7 @@
             </div>
           </div>
           <div class="earn-source">
-            <div class="source-header"><span class="source-icon">🔨</span><span class="source-name">Forge Spend → Points</span></div>
+            <div class="source-header"><span class="source-icon">🔨</span><span class="source-name">Spend Cores</span></div>
             <div>
               <div class="earn-row"><span class="earn-item-label">Spend Core I</span><span class="earn-item-value">+1 pt</span></div>
               <div class="earn-row"><span class="earn-item-label">Spend Core II</span><span class="earn-item-value">+50 pts</span></div>
@@ -3653,7 +3671,14 @@
       document.getElementById('progressVal').textContent = pct + '%';
       document.getElementById('cardProgressBar').style.width = pct + '%';
       document.getElementById('cardProgressText').textContent = currentIngots.toLocaleString() + ' / ' + MAX_INGOTS.toLocaleString();
-      ; var _el = document.getElementById('detailIngots'); if(_el) _el.textContent = currentIngots.toLocaleString();
+      // Update detail points bar
+      const ptsPct = Math.min(100, Math.round(currentIngots / 5000 * 100));
+      const ptsFill = document.getElementById('charsiPointsFill');
+      const ptsCircle = document.getElementById('charsiPointsCircle');
+      const ptsText = document.getElementById('charsiPointsText');
+      if (ptsFill) ptsFill.style.width = ptsPct + '%';
+      if (ptsCircle) ptsCircle.style.left = ptsPct + '%';
+      if (ptsText) ptsText.textContent = currentIngots.toLocaleString();
       updateMilestoneStates();
     }
 
