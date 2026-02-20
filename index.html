@@ -1160,7 +1160,7 @@
     }
 
     .detail-header-content {
-      padding: 14px 20px 18px;
+      padding: 10px 20px 10px;
     }
 
     .detail-title {
@@ -1169,6 +1169,24 @@
       color: var(--text-dark-primary);
       margin-bottom: 6px;
       padding-right: 40px;
+    }
+
+    .detail-title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .detail-title-row .detail-title {
+      margin-bottom: 0;
+    }
+
+    .detail-header-timer {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--accent-gold);
+      white-space: nowrap;
     }
 
     .detail-subtitle {
@@ -1224,7 +1242,7 @@
     }
 
     .milestone-section {
-      padding: 18px 0;
+      padding: 10px 0 6px;
     }
 
     .milestone-header {
@@ -1232,7 +1250,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 0 20px;
-      margin-bottom: 14px;
+      margin-bottom: 8px;
     }
 
     .milestone-title {
@@ -1272,22 +1290,80 @@
       color: var(--text-secondary);
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      margin-bottom: 10px;
+      margin-bottom: 4px;
       padding-left: 22px;
     }
 
     .milestone-track-container {
       padding: 0 16px;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
+      overflow: visible;
       position: relative;
     }
 
     .milestone-track-inner {
       position: relative;
       padding: 0 4px;
-      width: 560px;
-      transition: transform 0.5s ease;
+      width: 100%;
+    }
+
+    /* Grid layout for milestone rewards — no scroll */
+    .milestone-grid {
+      display: grid !important;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px 4px;
+      padding: 6px 6px;
+      justify-items: center;
+      width: 100%;
+    }
+
+    .milestone-grid .milestone-node {
+      min-width: unset;
+    }
+
+    .milestone-grid .ms-icon-wrap {
+      width: 44px;
+      height: 44px;
+      font-size: 18px;
+      border-radius: 10px;
+    }
+
+    .milestone-grid .ms-icon-wrap.claimed::after {
+      width: 16px;
+      height: 16px;
+      font-size: 8px;
+      top: -5px;
+      right: -5px;
+    }
+
+    .milestone-grid .ms-threshold {
+      font-size: 10px;
+      margin-bottom: 4px;
+    }
+
+    .milestone-grid .ms-reward-name {
+      font-size: 8px;
+      margin-top: 4px;
+      max-width: 64px;
+    }
+
+    /* Champion row inside gold wrapper */
+    .champ-grid-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      padding: 8px 4px 6px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .champ-grid-row .milestone-node {
+      min-width: unset;
+    }
+
+    .champ-grid-row .ms-icon-wrap {
+      width: 56px;
+      height: 56px;
+      font-size: 24px;
     }
 
     .milestone-connector {
@@ -2610,7 +2686,7 @@
     </div>
 
     <div class="debug-section">
-      <div class="debug-label">Charsi's Progress (Ember Ingots)</div>
+      <div class="debug-label">Maw to Metal Progress</div>
       <div class="debug-row">
         <input type="range" class="debug-slider" id="progressSlider" min="0" max="100" value="12"
           oninput="updateProgress(this.value)">
@@ -2698,66 +2774,16 @@
         <span class="img-placeholder-text">IMAGE</span>
         <span class="img-placeholder-sub">Art Asset · Menu Banner</span>
       </div>
-      <div class="mini-calendar">
-        <div class="cal-toggle" id="calToggle" onclick="toggleCalendar()">
-          <span class="cal-toggle-text">This Week's Schedule</span>
-          <span class="cal-toggle-arrow">▼</span>
-        </div>
-        <div class="cal-body" id="calBody">
-          <div class="cal-days" id="calDays">
-            <div class="cal-day today">MON</div>
-            <div class="cal-day">TUE</div>
-            <div class="cal-day">WED</div>
-            <div class="cal-day">THU</div>
-            <div class="cal-day">FRI</div>
-            <div class="cal-day">SAT</div>
-            <div class="cal-day">SUN</div>
-          </div>
-          <div class="cal-gantt" id="calGantt">
-            <div class="gantt-row">
-              <div class="gantt-label">CHARSI</div>
-              <div class="gantt-track">
-                <div class="gantt-bar" style="left:0%;width:64.3%;background:var(--accent-blue);">⛏ Farm → Forge</div>
-                <div class="gantt-now-line" id="ganttNow" style="left:5%"></div>
-              </div>
-            </div>
-            <div class="gantt-row">
-              <div class="gantt-label">MAW</div>
-              <div class="gantt-track">
-                <div class="gantt-bar" style="left:0%;width:28.6%;background:var(--accent-orange);">+20%</div>
-              </div>
-            </div>
-            <div class="gantt-row">
-              <div class="gantt-label">CB</div>
-              <div class="gantt-track">
-                <div class="gantt-bar" style="left:28.6%;width:28.6%;background:var(--accent-purple);">×2 DMG</div>
-              </div>
-            </div>
-            <div class="gantt-row">
-              <div class="gantt-label">WKND</div>
-              <div class="gantt-track">
-                <div class="gantt-bar" style="left:64.3%;width:35.7%;background:var(--accent-green);">Skill Focus</div>
-              </div>
-            </div>
-            <div class="gantt-row">
-              <div class="gantt-label">GOLDEN</div>
-              <div class="gantt-track">
-                <div class="gantt-bar" style="left:64.3%;width:35.7%;background:var(--accent-gold);">×2 Rewards</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div class="event-list" id="eventList">
         <div class="section-container active-section">
-          <div class="section-label" id="activeLabel">Active Events</div>
+          <div class="section-label" id="activeLabel" style="display:none;">Active Events</div>
 
           <div class="event-card token-card has-claim" id="charsiCard" data-event="charsi"
             onclick="openDetail('charsi')">
             <div class="card-main">
               <div class="card-top">
-                <div class="card-name">Charsi's Dedication</div>
+                <div class="card-name">Maw to Metal</div>
                 <div class="card-timer timer-ending" id="charsiTimer">Ends 2d 22h</div>
               </div>
               <div class="card-reward-preview">
@@ -2768,9 +2794,9 @@
                 <div class="card-reward-label">Mythic Weapon</div>
               </div>
               <div class="card-pills" style="display:none;"></div>
-              <div class="card-desc">Farm Cores → Forge Gear → Earn Ingots. Double-dip.</div>
+              <div class="card-desc">Play Maw + Forge gear → earn points.</div>
               <div class="card-progress">
-                <div class="progress-label"><span class="token-name">🔥 Ember Ingots</span><span class="token-count"
+                <div class="progress-label"><span class="token-name">🔥 Points</span><span class="token-count"
                     id="cardProgressText">1,850 / 5,200</span></div>
                 <div class="progress-bar-bg">
                   <div class="progress-bar-fill fill-blue" id="cardProgressBar" style="width:35.6%"></div>
@@ -2797,7 +2823,7 @@
                 <div class="buff-detail-row"><span class="buff-detail-label">Boost</span><span
                     class="buff-detail-value">+20% All Tiers</span></div>
                 <div class="buff-synergy">
-                  <div class="buff-synergy-text">🔗 Boosts Charsi's farming — more Cores = more Ingots</div>
+                  <div class="buff-synergy-text">🔗 Boosts Maw farming — more Cores = more Points</div>
                 </div>
               </div>
             </div>
@@ -2828,7 +2854,7 @@
 
         </div>
         <div class="section-container upcoming-section">
-          <div class="section-label" id="upcomingLabel">Coming Soon</div>
+          <div class="section-label" id="upcomingLabel" style="display:none;">Coming Soon</div>
 
           <div class="event-card weekend-card upcoming-card" id="weekendCard" data-event="weekend"
             onclick="openDetail('weekend')">
@@ -2893,16 +2919,9 @@
         <div class="img-placeholder detail-img-placeholder"><span class="img-placeholder-text">IMAGE</span><span
             class="img-placeholder-sub">Art Asset · Event Banner</span></div>
         <div class="detail-header-content">
-          <div class="detail-title">Charsi's Dedication</div>
-          <div class="detail-subtitle">Farm Cores from Frozen Maw, spend them in the Forge, earn Ember Ingots from
-            both.</div>
-          <div class="detail-stats">
-            <div class="detail-stat"><span class="stat-label" id="charsiDetailLabel">Ends In</span><span
-                class="stat-value" id="detailTimer">2d 22h</span></div>
-            <div class="detail-stat"><span class="stat-label">Ingots</span><span class="stat-value"
-                id="detailIngots">1,850</span></div>
-            <div class="detail-stat"><span class="stat-label">Milestones</span><span class="stat-value"
-                id="detailMilestones">4 / 11</span></div>
+          <div class="detail-title-row">
+            <div class="detail-title">Maw to Metal</div>
+            <div class="detail-header-timer" id="charsiHeaderTimer">⏱ 2d 22h</div>
           </div>
         </div>
       </div>
@@ -2916,10 +2935,7 @@
           <div class="milestone-row-label">Core Rewards</div>
           <div class="milestone-track-container">
             <div class="milestone-track-inner">
-              <div class="milestone-connector">
-                <div class="milestone-connector-fill fill-connector-blue" id="connectorFill1" style="width:38%"></div>
-              </div>
-              <div class="milestone-track" id="milestoneTrack1">
+              <div class="milestone-track milestone-grid" id="milestoneTrack1">
                 <div class="milestone-node" onclick="handleClaimSingle(this,'Energy ×200','⚡')">
                   <div class="ms-threshold reached">100</div>
                   <div class="ms-icon-wrap claimed">⚡</div>
@@ -2946,45 +2962,54 @@
                   <div class="ms-reward-name">Core II ×10</div>
                 </div>
                 <div class="milestone-node" onclick="handleClaimSingle(this,'Rune ×3','🔮')">
-                  <div class="ms-threshold">2,400</div>
+                  <div class="ms-threshold">2,000</div>
                   <div class="ms-icon-wrap locked">🔮</div>
                   <div class="ms-reward-name">Rune ×3</div>
                 </div>
                 <div class="milestone-node" onclick="handleClaimSingle(this,'Epic Rune ×1','✨')">
-                  <div class="ms-threshold">3,500</div>
+                  <div class="ms-threshold">2,500</div>
                   <div class="ms-icon-wrap locked">✨</div>
                   <div class="ms-reward-name">Epic Rune ×1</div>
+                </div>
+                <div class="milestone-node" onclick="handleClaimSingle(this,'Core III ×3','💠')">
+                  <div class="ms-threshold">3,000</div>
+                  <div class="ms-icon-wrap locked">💠</div>
+                  <div class="ms-reward-name">Core III ×3</div>
+                </div>
+                <div class="milestone-node" onclick="handleClaimSingle(this,'Charm Bag','🎒')">
+                  <div class="ms-threshold">3,500</div>
+                  <div class="ms-icon-wrap locked">🎒</div>
+                  <div class="ms-reward-name">Charm Bag</div>
+                </div>
+                <div class="milestone-node" onclick="handleClaimSingle(this,'Legend Rune','🔮')">
+                  <div class="ms-threshold">4,200</div>
+                  <div class="ms-icon-wrap locked">🔮</div>
+                  <div class="ms-reward-name">Legend Rune</div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="champ-section">
+          <!-- Champion Rewards -->
+          <div class="champ-section" style="margin-top:4px;padding-top:8px;">
             <div class="champ-bg-shimmer"></div>
-            <div class="champ-header">
-              <span class="champ-header-text">Tenacious Rewards</span>
-            </div>
-            <div class="milestone-track-container" style="overflow:visible;">
-              <div class="milestone-track-inner" style="width:auto;transition:none;">
-                <div class="milestone-track" id="champTrack" style="justify-content:space-around;">
-                  <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Epic Weapon','⚔️')"
-                    data-threshold="5000">
-                    <div class="ms-threshold champ-threshold">5,000</div>
-                    <div class="ms-icon-wrap locked">⚔️</div>
-                    <div class="ms-reward-name champ-reward-name">Epic Weapon</div>
-                  </div>
-                  <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Legend Armor','🛡️')"
-                    data-threshold="8000">
-                    <div class="ms-threshold champ-threshold">8,000</div>
-                    <div class="ms-icon-wrap locked">🛡️</div>
-                    <div class="ms-reward-name champ-reward-name">Legend Armor</div>
-                  </div>
-                  <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Mythic Weapon','🔥')"
-                    data-threshold="12000">
-                    <div class="ms-threshold champ-threshold">12,000</div>
-                    <div class="ms-icon-wrap locked">🔥</div>
-                    <div class="ms-reward-name champ-reward-name">Mythic Weapon</div>
-                  </div>
-                </div>
+            <div class="champ-grid-row" id="champTrack">
+              <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Epic Weapon','⚔️')"
+                data-threshold="5000">
+                <div class="ms-threshold champ-threshold">5,000</div>
+                <div class="ms-icon-wrap locked">⚔️</div>
+                <div class="ms-reward-name champ-reward-name">Epic Weapon</div>
+              </div>
+              <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Legend Armor','🛡️')"
+                data-threshold="8000">
+                <div class="ms-threshold champ-threshold">8,000</div>
+                <div class="ms-icon-wrap locked">🛡️</div>
+                <div class="ms-reward-name champ-reward-name">Legend Armor</div>
+              </div>
+              <div class="milestone-node champ-node" onclick="handleClaimSingle(this,'Mythic Weapon','🔥')"
+                data-threshold="12000">
+                <div class="ms-threshold champ-threshold">12,000</div>
+                <div class="ms-icon-wrap locked">🔥</div>
+                <div class="ms-reward-name champ-reward-name">Mythic Weapon</div>
               </div>
             </div>
           </div>
@@ -2995,61 +3020,46 @@
           <div class="earn-title">How to Earn</div>
           <div class="infographic">
             <div class="ig-wrap">
-              <!-- Branch: Two ways to earn Ingots -->
               <div class="ig-branch">
-                <!-- Path A: Earn Cores -->
                 <div class="ig-branch-card" onclick="showEventToast('Opens Frozen Maw Menu')" style="cursor:pointer;">
-                  <div class="ig-branch-label">Collect</div>
                   <div class="ig-bc-icon">⛏→💠</div>
-                  <div class="ig-bc-title">Play Frozen Maw<br>to Earn Cores</div>
-                  <div class="ig-bc-desc">Every Core gives Ember Ingots.<br><b>Higher tier = more Ingots</b></div>
+                  <div class="ig-bc-title">Play Frozen Maw</div>
+                  <div class="ig-go-btn">GO</div>
                 </div>
-                <!-- Path B: Forge -->
                 <div class="ig-branch-card" onclick="showEventToast('Opens Auto Forge Pop-Up')" style="cursor:pointer;">
-                  <div class="ig-branch-label">Craft</div>
                   <div class="ig-bc-icon">🔨→⚔️</div>
                   <div class="ig-bc-title">Forge Gear</div>
-                  <div class="ig-bc-desc">Spend Cores to forge.<br><b>Core tier = Ingots</b></div>
+                  <div class="ig-go-btn">GO</div>
                 </div>
               </div>
-              <!-- Compact result footer -->
               <div class="ig-result-footer">
                 <span class="ig-rf-icon">🔥</span>
-                <span class="ig-rf-text">Both paths earn <b>Ember Ingots</b> → Milestone Rewards</span>
+                <span class="ig-rf-text"><b>Every Core earned</b> and <b>every Core spent</b> in the Forge gives Points</span>
               </div>
 
               <div class="info-tap-hint" id="tapHint" onclick="toggleEarnDetails()"
-                style="margin-top:12px;cursor:pointer;">▼ Nerds Details</div>
+                style="margin-top:12px;cursor:pointer;">▼ Nerd Details</div>
             </div>
           </div>
         </div>
 
         <div class="earn-details-expanded" id="earnDetails">
           <div class="earn-source">
-            <div class="source-header"><span class="source-icon">⛏</span><span class="source-name">Maw
-                Drops</span></div>
+            <div class="source-header"><span class="source-icon">⛏</span><span class="source-name">Maw Drop → Points</span></div>
             <div>
-              <div class="earn-row"><span class="earn-item-label">Core I</span><span class="earn-item-value">+1</span>
-              </div>
-              <div class="earn-row"><span class="earn-item-label">Core II</span><span class="earn-item-value">+50</span>
-              </div>
-              <div class="earn-row"><span class="earn-item-label">Core III</span><span
-                  class="earn-item-value">+250</span></div>
+              <div class="earn-row"><span class="earn-item-label">Core I drop</span><span class="earn-item-value">+1 pt</span></div>
+              <div class="earn-row"><span class="earn-item-label">Core II drop</span><span class="earn-item-value">+50 pts</span></div>
+              <div class="earn-row"><span class="earn-item-label">Core III drop</span><span class="earn-item-value">+250 pts</span></div>
             </div>
           </div>
           <div class="earn-source">
-            <div class="source-header"><span class="source-icon">🔨</span><span class="source-name">Forge
-                Actions</span></div>
+            <div class="source-header"><span class="source-icon">🔨</span><span class="source-name">Forge Spend → Points</span></div>
             <div>
-              <div class="earn-row"><span class="earn-item-label">Spend Core I</span><span
-                  class="earn-item-value">+1</span></div>
-              <div class="earn-row"><span class="earn-item-label">Spend Core II</span><span
-                  class="earn-item-value">+50</span></div>
-              <div class="earn-row"><span class="earn-item-label">Spend Core III</span><span
-                  class="earn-item-value">+250</span></div>
+              <div class="earn-row"><span class="earn-item-label">Spend Core I</span><span class="earn-item-value">+1 pt</span></div>
+              <div class="earn-row"><span class="earn-item-label">Spend Core II</span><span class="earn-item-value">+50 pts</span></div>
+              <div class="earn-row"><span class="earn-item-label">Spend Core III</span><span class="earn-item-value">+250 pts</span></div>
             </div>
           </div>
-
         </div>
         <div class="footer-note">Unclaimed rewards mailed 24h after event ends</div>
       </div>
@@ -3064,16 +3074,9 @@
             Banner</span>
         </div>
         <div class="detail-header-content">
-          <div class="detail-title">Skill Mastery</div>
-          <div class="detail-subtitle">Earn Skill Tickets from dungeons, pull skills, evolve. Higher rarity skills give
-            more Scrolls.</div>
-          <div class="detail-stats">
-            <div class="detail-stat"><span class="stat-label" id="wkndDetailLabel">Starts In</span><span
-                class="stat-value" style="color:var(--accent-green);" id="wkndDetailTimer">4d 6h</span></div>
-            <div class="detail-stat"><span class="stat-label">Scrolls</span><span class="stat-value"
-                style="color:var(--accent-green);" id="wkndDetailScrolls">0</span></div>
-            <div class="detail-stat"><span class="stat-label">Milestones</span><span class="stat-value"
-                style="color:var(--accent-green);" id="wkndDetailMilestones">0 / 8</span></div>
+          <div class="detail-title-row">
+            <div class="detail-title">Skill Mastery</div>
+            <div class="detail-header-timer" id="wkndHeaderTimer" style="color:var(--accent-green);">⏱ 4d 6h</div>
           </div>
         </div>
       </div>
@@ -3087,12 +3090,8 @@
           </div>
           <div class="milestone-row-label">Core Rewards</div>
           <div class="milestone-track-container">
-            <div class="milestone-track-inner" style="width:400px;">
-              <div class="milestone-connector">
-                <div class="milestone-connector-fill fill-connector-green" id="wkndConnectorFill" style="width:0%">
-                </div>
-              </div>
-              <div class="milestone-track" id="wkndMilestoneTrack">
+            <div class="milestone-track-inner">
+              <div class="milestone-track milestone-grid" id="wkndMilestoneTrack">
                 <div class="milestone-node" onclick="handleWkndClaimSingle(this,'Energy ×100','⚡')">
                   <div class="ms-threshold">100</div>
                   <div class="ms-icon-wrap locked">⚡</div>
@@ -3121,33 +3120,27 @@
               </div>
             </div>
           </div>
-          <div class="champ-section">
+          <!-- Champion Rewards -->
+          <div class="champ-section" style="margin-top:4px;padding-top:8px;">
             <div class="champ-bg-shimmer"></div>
-            <div class="champ-header">
-              <span class="champ-header-text">Tenacious Rewards</span>
-            </div>
-            <div class="milestone-track-container" style="overflow:visible;">
-              <div class="milestone-track-inner" style="width:auto;transition:none;">
-                <div class="milestone-track" id="wkndChampTrack" style="justify-content:space-around;">
-                  <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Rare Skill Select','⚔️')"
-                    data-threshold="3000">
-                    <div class="ms-threshold champ-threshold">3,000</div>
-                    <div class="ms-icon-wrap locked">⚔️</div>
-                    <div class="ms-reward-name champ-reward-name">Rare Skill Select</div>
-                  </div>
-                  <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Epic Skill Select','🛡️')"
-                    data-threshold="5000">
-                    <div class="ms-threshold champ-threshold">5,000</div>
-                    <div class="ms-icon-wrap locked">🛡️</div>
-                    <div class="ms-reward-name champ-reward-name">Epic Skill Select</div>
-                  </div>
-                  <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Legendary Skill','🔥')"
-                    data-threshold="8000">
-                    <div class="ms-threshold champ-threshold">8,000</div>
-                    <div class="ms-icon-wrap locked">🔥</div>
-                    <div class="ms-reward-name champ-reward-name">Legendary Skill</div>
-                  </div>
-                </div>
+            <div class="champ-grid-row" id="wkndChampTrack">
+              <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Rare Skill Select','⚔️')"
+                data-threshold="3000">
+                <div class="ms-threshold champ-threshold">3,000</div>
+                <div class="ms-icon-wrap locked">⚔️</div>
+                <div class="ms-reward-name champ-reward-name">Rare Skill Select</div>
+              </div>
+              <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Epic Skill Select','🛡️')"
+                data-threshold="5000">
+                <div class="ms-threshold champ-threshold">5,000</div>
+                <div class="ms-icon-wrap locked">🛡️</div>
+                <div class="ms-reward-name champ-reward-name">Epic Skill Select</div>
+              </div>
+              <div class="milestone-node champ-node" onclick="handleWkndClaimSingle(this,'Legendary Skill','🔥')"
+                data-threshold="8000">
+                <div class="ms-threshold champ-threshold">8,000</div>
+                <div class="ms-icon-wrap locked">🔥</div>
+                <div class="ms-reward-name champ-reward-name">Legendary Skill</div>
               </div>
             </div>
           </div>
@@ -3160,80 +3153,53 @@
             <div class="ig-wrap">
               <div class="ig-branch" style="gap:6px;">
                 <div class="ig-branch-card" style="max-width:120px;padding:12px 6px 10px;">
-                  <div class="ig-branch-label" style="background:var(--accent-green-light);color:var(--accent-green);">
-                    Dungeon</div>
                   <div class="ig-bc-icon">⛏→🎫</div>
                   <div class="ig-bc-title" style="font-size:10px;">Run Dungeons</div>
-                  <div class="ig-bc-desc">Cursed Heartwood.<br><b>Earn Skill Tickets</b></div>
+                  <div class="ig-go-btn">GO</div>
                 </div>
                 <div class="ig-branch-card" style="max-width:120px;padding:12px 6px 10px;">
-                  <div class="ig-branch-label"
-                    style="background:var(--accent-purple-light);color:var(--accent-purple);">
-                    Summon</div>
                   <div class="ig-bc-icon">🎫→⭐</div>
                   <div class="ig-bc-title" style="font-size:10px;">Pull Skills</div>
-                  <div class="ig-bc-desc">Use tickets to pull.<br><b>Every pull = Scrolls</b></div>
+                  <div class="ig-go-btn">GO</div>
                 </div>
                 <div class="ig-branch-card" style="max-width:120px;padding:12px 6px 10px;">
-                  <div class="ig-branch-label" style="background:var(--accent-gold-light);color:var(--accent-gold);">
-                    Evolve</div>
                   <div class="ig-bc-icon">⭐→🌟</div>
                   <div class="ig-bc-title" style="font-size:10px;">Evolve Skills</div>
-                  <div class="ig-bc-desc">Level up skills.<br><b>Rarer = more</b></div>
+                  <div class="ig-go-btn">GO</div>
                 </div>
               </div>
               <div class="ig-result-footer" style="background:var(--accent-green-light);">
                 <span class="ig-rf-icon">📜</span>
-                <span class="ig-rf-text" style="color:var(--accent-green);">All paths earn <b>Skill Scrolls</b> →
-                  Milestone Rewards</span>
+                <span class="ig-rf-text" style="color:var(--accent-green);"><b>Dungeon runs</b> give tickets, <b>pulls</b> and <b>evolves</b> give Scrolls</span>
               </div>
 
               <div class="info-tap-hint" id="wkndTapHint" onclick="toggleWkndEarnDetails()"
-                style="margin-top:12px;cursor:pointer;">▼ Nerds Details</div>
+                style="margin-top:12px;cursor:pointer;">▼ Nerd Details</div>
             </div>
           </div>
         </div>
 
         <div class="earn-details-expanded" id="wkndEarnDetails">
           <div class="earn-source">
-            <div class="source-header"><span class="source-icon">⛏</span><span class="source-name">Dungeon
-                Tickets</span></div>
+            <div class="source-header"><span class="source-icon">⛏</span><span class="source-name">Dungeon → Tickets</span></div>
             <div>
-              <div class="earn-row"><span class="earn-item-label">Cursed Heartwood</span><span
-                  class="earn-item-value">+5 per
-                  run</span></div>
+              <div class="earn-row"><span class="earn-item-label">Cursed Heartwood run</span><span class="earn-item-value">+5 tickets</span></div>
             </div>
           </div>
           <div class="earn-source">
-            <div class="source-header"><span class="source-icon">🎫</span><span class="source-name">Skill
-                Summon</span><span class="source-cap cap-daily">No Cap</span></div>
+            <div class="source-header"><span class="source-icon">🎫</span><span class="source-name">Skill Pull → Scrolls</span></div>
             <div>
-              <div class="earn-row"><span class="earn-item-label">Per Pull</span><span
-                  class="earn-item-value">+15</span>
-              </div>
-              <div class="earn-row"><span class="earn-item-label">10-Pull Bonus</span><span
-                  class="earn-item-value">+200</span></div>
+              <div class="earn-row"><span class="earn-item-label">Single pull</span><span class="earn-item-value">+15 scrolls</span></div>
+              <div class="earn-row"><span class="earn-item-label">10-pull bonus</span><span class="earn-item-value">+200 scrolls</span></div>
             </div>
           </div>
           <div class="earn-source">
-            <div class="source-header"><span class="source-icon">🌟</span><span class="source-name">Skill
-                Evolve</span><span class="source-cap cap-daily">Daily: 500</span></div>
+            <div class="source-header"><span class="source-icon">🌟</span><span class="source-name">Evolve → Scrolls</span><span class="source-cap cap-daily">Daily: 500</span></div>
             <div>
-              <div class="earn-row"><span class="earn-item-label">Common</span><span class="earn-item-value">+5</span>
-              </div>
-              <div class="earn-row"><span class="earn-item-label">Rare</span><span class="earn-item-value">+20</span>
-              </div>
-              <div class="earn-row"><span class="earn-item-label">Epic</span><span class="earn-item-value">+80</span>
-              </div>
-              <div class="earn-row"><span class="earn-item-label">Legendary</span><span
-                  class="earn-item-value">+250</span></div>
-            </div>
-            <div class="cap-indicator">
-              <div style="display:flex;flex-direction:column;gap:2px;min-width:80px;"><span
-                  class="cap-type-label">Today</span><span class="cap-text">0 / 500</span></div>
-              <div class="cap-bar-bg">
-                <div class="cap-bar-fill cap-fill-orange" style="width:0%"></div>
-              </div>
+              <div class="earn-row"><span class="earn-item-label">Common evolve</span><span class="earn-item-value">+5 scrolls</span></div>
+              <div class="earn-row"><span class="earn-item-label">Rare evolve</span><span class="earn-item-value">+20 scrolls</span></div>
+              <div class="earn-row"><span class="earn-item-label">Epic evolve</span><span class="earn-item-value">+80 scrolls</span></div>
+              <div class="earn-row"><span class="earn-item-label">Legendary evolve</span><span class="earn-item-value">+250 scrolls</span></div>
             </div>
           </div>
         </div>
@@ -3248,7 +3214,7 @@
         <div class="popup-close" onclick="closeClaimPopup()">✕</div>
         <div class="popup-header">
           <div class="popup-title">Rewards Claimed!</div>
-          <div class="popup-subtitle">Charsi's Dedication</div>
+          <div class="popup-subtitle">Maw to Metal</div>
         </div>
         <div class="popup-rewards" id="popupRewards"></div>
         <div class="popup-footer"><button class="popup-ok-btn" onclick="closeClaimPopup()">Awesome</button></div>
@@ -3332,11 +3298,11 @@
     }
     function toggleEarnDetails() {
       const d = document.getElementById('earnDetails'), h = document.getElementById('tapHint');
-      d.classList.toggle('open'); h.textContent = d.classList.contains('open') ? '▲ Hide details' : '▼ Nerds Details';
+      d.classList.toggle('open'); h.textContent = d.classList.contains('open') ? '▲ Hide details' : '▼ Nerd Details';
     }
     function toggleWkndEarnDetails() {
       const d = document.getElementById('wkndEarnDetails'), h = document.getElementById('wkndTapHint');
-      d.classList.toggle('open'); h.textContent = d.classList.contains('open') ? '▲ Hide details' : '▼ Nerds Details';
+      d.classList.toggle('open'); h.textContent = d.classList.contains('open') ? '▲ Hide details' : '▼ Nerd Details';
     }
 
     // ============================================ WEEKEND SKILL MASTERY ============================================
@@ -3348,7 +3314,7 @@
     function updateWkndProgress(val) {
       document.getElementById('wkndProgressVal').textContent = val + '%';
       currentScrolls = Math.round(WKND_MAX_SCROLLS * val / 100);
-      document.getElementById('wkndDetailScrolls').textContent = currentScrolls.toLocaleString();
+      ; var _el3 = document.getElementById('wkndDetailScrolls'); if(_el3) _el3.textContent = currentScrolls.toLocaleString();
       updateWkndMilestoneStates();
     }
 
@@ -3405,7 +3371,7 @@
       const claimedChamp = document.querySelectorAll('#wkndChampTrack .ms-icon-wrap.claimed').length;
       const totalCore = coreNodes.length;
       const totalChamp = champNodes.length;
-      document.getElementById('wkndDetailMilestones').textContent = (claimedCore + claimedChamp) + ' / ' + (totalCore + totalChamp);
+      ; var _el4 = document.getElementById('wkndDetailMilestones'); if(_el4) _el4.textContent = (claimedCore + claimedChamp) + ' / ' + (totalCore + totalChamp);
       // Claim All button state
       const hasClaimable = document.querySelectorAll('#detailWeekend .ms-icon-wrap.claimable').length;
       const claimBtn = document.getElementById('wkndClaimAllBtn');
@@ -3468,7 +3434,7 @@
       const w = el.querySelector('.ms-icon-wrap'); if (!w || !w.classList.contains('claimable')) return;
       w.classList.remove('claimable'); w.classList.add('claimed');
       const th = el.querySelector('.ms-threshold'); if (th) th.classList.add('reached');
-      showClaimPopupWith([{ icon, name, from: "Charsi's Dedication", amount: '×1' }]);
+      showClaimPopupWith([{ icon, name, from: "Maw to Metal", amount: '×1' }]);
       updateHUDNotifications();
       scrollMilestoneTrack('#milestoneTrack1');
     }
@@ -3479,7 +3445,7 @@
         const w = el;
         w.classList.remove('claimable'); w.classList.add('claimed');
         const th = el.parentElement.querySelector('.ms-threshold'); if (th) th.classList.add('reached');
-        items.push({ icon, name, from: "Charsi's Dedication", amount: '×1' });
+        items.push({ icon, name, from: "Maw to Metal", amount: '×1' });
       });
       if (items.length > 0) { showClaimPopupWith(items); updateHUDNotifications(); scrollMilestoneTrack('#milestoneTrack1'); }
     }
@@ -3526,7 +3492,7 @@
     }
 
     // Milestone thresholds for the 7 core reward nodes
-    const CORE_THRESHOLDS = [100, 300, 600, 1000, 1600, 2400, 3500];
+    const CORE_THRESHOLDS = [100, 300, 600, 1000, 1600, 2000, 2500, 3000, 3500, 4200];
     const CHAMPION_THRESHOLDS = [5000, 8000, 12000];
     const MAX_INGOTS = 12000;
     let currentIngots = Math.round(MAX_INGOTS * 12 / 100); // initial 12%
@@ -3536,7 +3502,7 @@
       document.getElementById('cardProgressBar').style.width = val + '%';
       currentIngots = Math.round(MAX_INGOTS * val / 100);
       document.getElementById('cardProgressText').textContent = currentIngots.toLocaleString() + ' / ' + MAX_INGOTS.toLocaleString();
-      document.getElementById('detailIngots').textContent = currentIngots.toLocaleString();
+      ; var _el = document.getElementById('detailIngots'); if(_el) _el.textContent = currentIngots.toLocaleString();
       updateMilestoneStates();
     }
 
@@ -3612,7 +3578,7 @@
       const claimedChamp = document.querySelectorAll('#champTrack .ms-icon-wrap.claimed').length;
       const totalCore = document.querySelectorAll('#milestoneTrack1 .milestone-node').length;
       const totalChamp = champNodes.length;
-      document.getElementById('detailMilestones').textContent = (claimedCore + claimedChamp) + ' / ' + (totalCore + totalChamp);
+      ; var _el2 = document.getElementById('detailMilestones'); if(_el2) _el2.textContent = (claimedCore + claimedChamp) + ' / ' + (totalCore + totalChamp);
       updateHUDNotifications();
       scrollMilestoneTrack('#milestoneTrack1');
       if (typeof updateCardDots === 'function') updateCardDots('cardMiniDots', '#milestoneTrack1', '#champTrack');
@@ -3687,14 +3653,14 @@
       document.getElementById('progressVal').textContent = pct + '%';
       document.getElementById('cardProgressBar').style.width = pct + '%';
       document.getElementById('cardProgressText').textContent = currentIngots.toLocaleString() + ' / ' + MAX_INGOTS.toLocaleString();
-      document.getElementById('detailIngots').textContent = currentIngots.toLocaleString();
+      ; var _el = document.getElementById('detailIngots'); if(_el) _el.textContent = currentIngots.toLocaleString();
       updateMilestoneStates();
     }
 
     function simCoreEarn(tier) {
       const ingots = CORE_INGOT_VALUES[tier];
       addIngots(ingots);
-      document.getElementById('simLog').textContent = `Earned Core ${tier} → +${ingots} Ember Ingots (Total: ${currentIngots.toLocaleString()})`;
+      document.getElementById('simLog').textContent = `Earned Core ${tier} → +${ingots} Points (Total: ${currentIngots.toLocaleString()})`;
     }
 
     function formatTime(totalHours) {
@@ -3792,28 +3758,29 @@
       // Charsi detail
       const charsiStart = EVENTS.charsi.start[0] * 24 + EVENTS.charsi.start[1];
       const charsiEnd = EVENTS.charsi.end[0] * 24 + EVENTS.charsi.end[1];
-      const charsiLabel = document.getElementById('charsiDetailLabel');
-      const charsiTimer2 = document.getElementById('detailTimer');
-      if (nowTotal >= charsiEnd) {
-        charsiLabel.textContent = 'Status'; charsiTimer2.textContent = 'Ended';
-      } else if (nowTotal < charsiStart) {
-        charsiLabel.textContent = 'Starts In'; charsiTimer2.textContent = formatTime(charsiStart - nowTotal);
-      } else {
-        charsiLabel.textContent = 'Ends In'; charsiTimer2.textContent = formatTime(charsiEnd - nowTotal);
+      const charsiHTimer = document.getElementById('charsiHeaderTimer');
+      if (charsiHTimer) {
+        if (nowTotal >= charsiEnd) {
+          charsiHTimer.textContent = 'Ended'; charsiHTimer.style.color = 'var(--text-secondary)';
+        } else if (nowTotal < charsiStart) {
+          charsiHTimer.textContent = '⏱ Starts ' + formatTime(charsiStart - nowTotal); charsiHTimer.style.color = 'var(--accent-green)';
+        } else {
+          charsiHTimer.textContent = '⏱ ' + formatTime(charsiEnd - nowTotal); charsiHTimer.style.color = 'var(--accent-gold)';
+        }
       }
 
       // Weekend detail
       const wkndStart = EVENTS.weekend.start[0] * 24 + EVENTS.weekend.start[1];
       const wkndEnd = EVENTS.weekend.end[0] * 24 + EVENTS.weekend.end[1];
-      const wkndLabel = document.getElementById('wkndDetailLabel');
-      const wkndTimer2 = document.getElementById('wkndDetailTimer');
-
-      if (nowTotal >= wkndEnd) {
-        wkndLabel.textContent = 'Status'; wkndTimer2.textContent = 'Ended';
-      } else if (nowTotal < wkndStart) {
-        wkndLabel.textContent = 'Starts In'; wkndTimer2.textContent = formatTime(wkndStart - nowTotal);
-      } else {
-        wkndLabel.textContent = 'Ends In'; wkndTimer2.textContent = formatTime(wkndEnd - nowTotal);
+      const wkndHTimer = document.getElementById('wkndHeaderTimer');
+      if (wkndHTimer) {
+        if (nowTotal >= wkndEnd) {
+          wkndHTimer.textContent = 'Ended'; wkndHTimer.style.color = 'var(--text-secondary)';
+        } else if (nowTotal < wkndStart) {
+          wkndHTimer.textContent = '⏱ Starts ' + formatTime(wkndStart - nowTotal); wkndHTimer.style.color = 'var(--accent-green)';
+        } else {
+          wkndHTimer.textContent = '⏱ ' + formatTime(wkndEnd - nowTotal); wkndHTimer.style.color = 'var(--accent-green)';
+        }
       }
     }
 
@@ -3848,36 +3815,6 @@
     }
     // Run on load
     updateCardDots('cardMiniDots', '#milestoneTrack1', '#champTrack');
-
-    // ============ ITEM 1: Drag-Scroll for Milestone Tracks ============
-    function enableDragScroll(containerSelector) {
-      document.querySelectorAll(containerSelector).forEach(container => {
-        let isDown = false, startX, scrollLeft;
-        container.style.cursor = 'grab';
-        container.style.overflowX = 'auto';
-        container.style.scrollbarWidth = 'none';
-        container.addEventListener('pointerdown', e => {
-          isDown = true; container.style.cursor = 'grabbing';
-          startX = e.pageX - container.offsetLeft;
-          scrollLeft = container.scrollLeft;
-          container.setPointerCapture(e.pointerId);
-        });
-        container.addEventListener('pointermove', e => {
-          if (!isDown) return;
-          e.preventDefault();
-          const x = e.pageX - container.offsetLeft;
-          container.scrollLeft = scrollLeft - (x - startX);
-        });
-        container.addEventListener('pointerup', e => {
-          isDown = false; container.style.cursor = 'grab';
-          container.releasePointerCapture(e.pointerId);
-        });
-        container.addEventListener('pointerleave', () => {
-          isDown = false; container.style.cursor = 'grab';
-        });
-      });
-    }
-    enableDragScroll('.milestone-track-container');
   </script>
 </body>
 
